@@ -1,4 +1,4 @@
-package com.WinkProject;
+package com.winkproject;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
