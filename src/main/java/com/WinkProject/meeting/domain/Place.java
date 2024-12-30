@@ -17,7 +17,4 @@ public class Place {
     private String address;
     private Double latitude;
     private Double longitude;
-    
-    @OneToOne(mappedBy = "place")
-    private Meeting meeting;
 } 

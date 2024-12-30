@@ -21,7 +21,7 @@ public class Meeting {
     private String name;
     private String description;
     
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "placeId")
     private Place place;
     
