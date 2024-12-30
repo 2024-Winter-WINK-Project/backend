@@ -47,9 +47,7 @@ public class AuthService {
                 .bodyToMono(KakaoUserInfoResponse.class)
                 .block();
 
-        log.info(kakaoUserInfoResponse.getKakaoAccount().getProfile().getNickName() + "닉네임");
-        log.info(kakaoUserInfoResponse.getKakaoAccount().getProfile().getThumbnailImageUrl() +"프로필 사진");
-        log.info(kakaoUserInfoResponse.getId().toString());
+
         return kakaoUserInfoResponse;
 
 
