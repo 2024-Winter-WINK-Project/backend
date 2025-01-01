@@ -23,8 +23,8 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private boolean isPermitAllPath(String path) {
         return path.equals("/") || // 첫 화면 test용도
-                path.startsWith("/auth/"); // 인증 관련 경로
-    }
+                path.equals("/auth/kakao/login")|| // 인증 관련 경로
+                path.equals("/auth/callback");    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -50,14 +50,13 @@ public class JwtFilter extends OncePerRequestFilter {
         }
         try{
             Claims claims = jwtTokenProvider.validateToken(token);
-            String userId = claims.get("userId", Long.class).toString();
-            log.info(claims.toString());
-            log.info("토큰 디코딩 성공");
+            Long userId = claims.get("userId", Long.class);
+
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId,null,null);
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            log.info(String.valueOf(authentication.getPrincipal().getClass()));
         }catch (Exception e){
-            log.info("실패");
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }

@@ -1,4 +1,4 @@
-package com.WinkProject.auth.Controller;
+package com.WinkProject.auth.controller;
 
 import com.WinkProject.auth.dto.KakaoUserInfoResponse;
 import com.WinkProject.auth.service.AuthService;
@@ -10,10 +10,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -46,9 +49,14 @@ public class AuthController {
     public ResponseEntity<?> callback(@RequestParam("code") String code, HttpServletResponse response)  {
         String accessToken = authService.getAccessToken(code);
         KakaoUserInfoResponse kakaoUserInfoResponse = authService.getUserInfo(accessToken);
-        String token = jwtTokenProvider.createToken(kakaoUserInfoResponse.getId());
+
+        // DB에 auth 정보 저장
+        Long userID = kakaoUserInfoResponse.getId();
+        String profileUrl = kakaoUserInfoResponse.getKakaoAccount().getProfile().getProfileImageUrl();
+        authService.saveAuth(userID,profileUrl);
 
         //쿠키 생성,jwt 전달
+        String token = jwtTokenProvider.createToken(kakaoUserInfoResponse.getId());
         Cookie cookie = new Cookie("jwt",token);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
@@ -56,6 +64,29 @@ public class AuthController {
         cookie.setMaxAge(60*60); // 1시간 동안 유효
         response.addCookie(cookie);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping("/auth/withdraw")
+    public ResponseEntity<?> withdraw(){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long userId = (Long)authentication.getPrincipal();
+        boolean withDrawSuccess = authService.deleteAuth(userId);
+
+        if (withDrawSuccess){
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
+    }
+
+    @GetMapping("/auth/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response){
+        boolean logOutSuccess = authService.logout(response);
+        if (logOutSuccess){
+            return new ResponseEntity<>(HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+
     }
 
 }
