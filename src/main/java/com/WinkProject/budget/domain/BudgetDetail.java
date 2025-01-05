@@ -1,4 +1,4 @@
-package com.winkproject.budget.domain;
+package com.WinkProject.budget.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;

@@ -1,7 +1,7 @@
-package com.winkproject.invitation.dto.response;
+package com.WinkProject.invitation.dto.response;
 
-import com.winkproject.invitation.domain.Invitation;
-import com.winkproject.meeting.dto.response.MeetingResponse;
+import com.WinkProject.invitation.domain.Invitation;
+import com.WinkProject.meeting.dto.response.MeetingResponse;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,4 +1,4 @@
-package com.winkproject.member.domain;
+package com.WinkProject.member.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;

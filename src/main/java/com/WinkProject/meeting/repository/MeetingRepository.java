@@ -1,7 +1,7 @@
-package com.winkproject.meeting.repository;
+package com.WinkProject.meeting.repository;
 
-import com.winkproject.meeting.domain.Meeting;
-import com.winkproject.meeting.dto.response.MeetingResponse;
+import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.meeting.dto.response.MeetingResponse;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,7 +17,7 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
     @Query("SELECT m FROM Meeting m JOIN m.members mem WHERE mem.auth.id = :userId ORDER BY m.createdAt DESC")
     List<Meeting> findLatestMeetings(@Param("userId") Long userId, Pageable pageable);
     
-    @Query("SELECT new com.winkproject.meeting.dto.response.MeetingResponse(m.id, m.name, m.createdAt) " +
+    @Query("SELECT new com.WinkProject.meeting.dto.response.MeetingResponse(m.id, m.name, m.createdAt) " +
        "FROM Meeting m JOIN m.members mem WHERE mem.auth.id = :userId ORDER BY m.createdAt DESC")
     List<MeetingResponse> findLatestMeetingDTOs(@Param("userId") Long userId, Pageable pageable);
 

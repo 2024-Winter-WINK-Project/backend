@@ -1,7 +1,7 @@
-package com.winkproject.post.domain;
+package com.WinkProject.post.domain;
 
-import com.winkproject.meeting.domain.Meeting;
-import com.winkproject.member.domain.Member;
+import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

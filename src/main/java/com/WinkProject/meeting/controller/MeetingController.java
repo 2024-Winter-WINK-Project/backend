@@ -1,10 +1,10 @@
-package com.winkproject.meeting.controller;
+package com.WinkProject.meeting.controller;
 
-import com.winkproject.meeting.dto.request.MeetingCreateRequest;
-import com.winkproject.meeting.dto.request.MeetingUpdateRequest;
-import com.winkproject.meeting.dto.response.MeetingResponse;
-import com.winkproject.invitation.dto.response.InvitationResponse;
-import com.winkproject.meeting.service.MeetingService;
+import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
+import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
+import com.WinkProject.meeting.dto.response.MeetingResponse;
+import com.WinkProject.invitation.dto.response.InvitationResponse;
+import com.WinkProject.meeting.service.MeetingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

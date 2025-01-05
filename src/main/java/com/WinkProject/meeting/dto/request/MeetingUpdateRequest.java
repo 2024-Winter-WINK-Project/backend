@@ -1,4 +1,4 @@
-package com.winkproject.meeting.dto.request;
+package com.WinkProject.meeting.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,6 +1,6 @@
-package com.winkproject.budget.domain;
+package com.WinkProject.budget.domain;
 
-import com.winkproject.meeting.domain.Meeting;
+import com.WinkProject.meeting.domain.Meeting;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,4 +24,8 @@ public class Budget {
     
     @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL)
     private List<BudgetDetail> details = new ArrayList<>();
+
+    private String kakaoRemitLink;
+    private String tossRemitLink;
+    private String accountNumber;
 } 

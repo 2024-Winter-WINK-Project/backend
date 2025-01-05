@@ -1,7 +1,7 @@
-package com.winkproject.member.repository;
+package com.WinkProject.member.repository;
 
-import com.winkproject.meeting.domain.Meeting;
-import com.winkproject.member.domain.Member;
+import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.member.domain.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

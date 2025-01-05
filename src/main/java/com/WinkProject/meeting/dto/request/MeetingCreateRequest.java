@@ -1,7 +1,7 @@
-package com.winkproject.meeting.dto.request;
+package com.WinkProject.meeting.dto.request;
 
-import com.winkproject.meeting.domain.Meeting;
-import com.winkproject.meeting.domain.Place;
+import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.meeting.domain.Place;
 import lombok.Getter;
 import lombok.Setter;
 

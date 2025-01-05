@@ -1,8 +1,8 @@
-package com.winkproject.meeting.dto.response;
+package com.WinkProject.meeting.dto.response;
 
-import com.winkproject.meeting.domain.Meeting;
-import com.winkproject.member.domain.Member;
-import com.winkproject.member.domain.MemberRole;
+import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.member.domain.Member;
+import com.WinkProject.member.domain.MemberRole;
 import lombok.Getter;
 import lombok.Setter;
 

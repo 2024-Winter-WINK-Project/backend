@@ -1,6 +1,6 @@
-package com.winkproject.invitation.repository;
+package com.WinkProject.invitation.repository;
 
-import com.winkproject.invitation.domain.Invitation;
+import com.WinkProject.invitation.domain.Invitation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
