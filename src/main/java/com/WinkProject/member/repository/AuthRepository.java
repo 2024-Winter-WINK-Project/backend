@@ -1,6 +1,6 @@
-package com.winkproject.member.repository;
+package com.WinkProject.member.repository;
 
-import com.winkproject.member.domain.Auth;
+import com.WinkProject.member.domain.Auth;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

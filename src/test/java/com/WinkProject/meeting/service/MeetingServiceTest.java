@@ -1,15 +1,17 @@
-package com.winkproject.meeting.service;
+package com.WinkProject.meeting.service;
 
-import com.winkproject.common.fixture.MeetingTestFixture;
-import com.winkproject.meeting.domain.Meeting;
-import com.winkproject.meeting.dto.request.MeetingCreateRequest;
-import com.winkproject.meeting.dto.request.MeetingUpdateRequest;
-import com.winkproject.meeting.dto.response.MeetingResponse;
-import com.winkproject.meeting.repository.MeetingRepository;
-import com.winkproject.member.domain.Auth;
-import com.winkproject.member.domain.Member;
-import com.winkproject.member.domain.MemberRole;
-import com.winkproject.member.repository.MemberRepository;
+import com.WinkProject.common.fixture.MeetingTestFixture;
+import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
+import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
+import com.WinkProject.meeting.dto.response.MeetingResponse;
+import com.WinkProject.meeting.repository.MeetingRepository;
+import com.WinkProject.meeting.service.MeetingService;
+import com.WinkProject.member.domain.Auth;
+import com.WinkProject.member.domain.Member;
+import com.WinkProject.member.domain.MemberRole;
+import com.WinkProject.member.repository.MemberRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

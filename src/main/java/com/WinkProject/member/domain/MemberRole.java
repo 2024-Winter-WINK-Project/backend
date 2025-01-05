@@ -1,4 +1,4 @@
-package com.winkproject.member.domain;
+package com.WinkProject.member.domain;
 
 public enum MemberRole {
     OWNER,      // 모임장

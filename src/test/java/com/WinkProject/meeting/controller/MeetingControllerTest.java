@@ -1,12 +1,14 @@
-package com.winkproject.meeting.controller;
+package com.WinkProject.meeting.controller;
 
+import com.WinkProject.common.fixture.MeetingTestFixture;
+import com.WinkProject.meeting.controller.MeetingController;
+import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
+import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
+import com.WinkProject.meeting.dto.response.MeetingResponse;
+import com.WinkProject.meeting.service.MeetingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.winkproject.common.fixture.MeetingTestFixture;
-import com.winkproject.meeting.dto.request.MeetingCreateRequest;
-import com.winkproject.meeting.dto.request.MeetingUpdateRequest;
-import com.winkproject.meeting.dto.response.MeetingResponse;
-import com.winkproject.meeting.service.MeetingService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

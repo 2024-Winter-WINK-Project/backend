@@ -1,11 +1,11 @@
-package com.winkproject.common.fixture;
-
-import com.winkproject.meeting.domain.Meeting;
-import com.winkproject.meeting.domain.Place;
-import com.winkproject.meeting.dto.request.MeetingCreateRequest;
-import com.winkproject.meeting.dto.request.MeetingUpdateRequest;
+package com.WinkProject.common.fixture;
 
 import java.time.LocalDateTime;
+
+import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.meeting.domain.Place;
+import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
+import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
 
 public class MeetingTestFixture {
     
