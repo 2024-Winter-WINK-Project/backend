@@ -68,7 +68,7 @@ public class AuthService {
 
     public void saveAuth(Long userId, String profileUrl){
         //TODO 로그인 할때마다 저장 하지 말고 데이터 있는지 먼저 검사 하기
-        Auth auth = Auth.builder().authId(userId).profileUrl(profileUrl).build();
+        Auth auth = Auth.builder().socialId(userId).profileUrl(profileUrl).build();
         authRepository.save(auth);
 
     }

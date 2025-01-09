@@ -13,12 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
+import org.springframework.web.bind.annotation.*;
 
 
 @Slf4j
@@ -46,6 +41,7 @@ public class AuthController {
         return "redirect:" + location;
     }
     @GetMapping("/auth/callback") //TODO 나중에 /kakao/login 로 변경 후 프론트에서 인가 코드만 받아오기
+    @ResponseBody
     public ResponseEntity<?> callback(@RequestParam("code") String code, HttpServletResponse response)  {
         String accessToken = authService.getAccessToken(code);
         KakaoUserInfoResponse kakaoUserInfoResponse = authService.getUserInfo(accessToken);
@@ -63,10 +59,11 @@ public class AuthController {
         cookie.setPath("/");
         cookie.setMaxAge(60*60); // 1시간 동안 유효
         response.addCookie(cookie);
-        return new ResponseEntity<>(HttpStatus.OK);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/auth/withdraw")
+    @ResponseBody
     public ResponseEntity<?> withdraw(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = (Long)authentication.getPrincipal();
@@ -80,6 +77,7 @@ public class AuthController {
     }
 
     @GetMapping("/auth/logout")
+    @ResponseBody
     public ResponseEntity<?> logout(HttpServletResponse response){
         boolean logOutSuccess = authService.logout(response);
         if (logOutSuccess){
