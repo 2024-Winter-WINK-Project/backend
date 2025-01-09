@@ -30,7 +30,8 @@ public class AuthController {
     @Value("${spring.security.oauth2.client.registration.kakao.redirect_uri}")
     private String redirectUri;
 
-    @GetMapping("/tt")
+    @GetMapping("/")
+    @ResponseBody
     public String test(){
         return "test";
     }

@@ -24,6 +24,8 @@ public class AuthService {
 
     @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
     private String clientId;
+    @Value("${spring.security.oauth2.client.registration.kakao.redirect_uri}")
+    private String redirectUri;
 
     private final AuthRepository authRepository;
     private final MemberRepository memberRepository;
@@ -38,6 +40,7 @@ public class AuthService {
                         .path("/oauth/token")
                         .queryParam("grant_type", "authorization_code")
                         .queryParam("client_id", clientId)
+                        .queryParam("redirect_uri",redirectUri)
                         .queryParam("code", code)
                         .build(true))
                 .header(HttpHeaders.CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString())

@@ -24,7 +24,9 @@ public class JwtFilter extends OncePerRequestFilter {
     private boolean isPermitAllPath(String path) {
         return path.equals("/") || // 첫 화면 test용도
                 path.equals("/auth/kakao/login")|| // 인증 관련 경로
-                path.equals("/auth/callback");    }
+                path.equals("/auth/callback")||
+                path.equals("/static/favicon.ico");
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

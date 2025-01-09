@@ -25,7 +25,7 @@ public class SecurityConfig {
         return http.cors(Customizer.withDefaults())
                 .csrf((csrf) -> csrf.disable())
                 .authorizeHttpRequests((authorize)->authorize
-                        .requestMatchers("/", "/auth/kakao/login","/auth/callback").permitAll()
+                        .requestMatchers("/", "/auth/kakao/login","/auth/callback", "/static/favicon.ico").permitAll()
                         .anyRequest().authenticated())
 
                 .formLogin(httpSecurityFormLoginConfigurer -> httpSecurityFormLoginConfigurer.disable())
