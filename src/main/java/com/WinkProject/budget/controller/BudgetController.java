@@ -6,6 +6,7 @@ import com.WinkProject.budget.dto.request.BankAccount;
 import com.WinkProject.budget.dto.request.HistoryRequest;
 import com.WinkProject.budget.dto.request.Kakao;
 import com.WinkProject.budget.dto.request.Toss;
+import com.WinkProject.budget.dto.response.AdjustmentResponse;
 import com.WinkProject.budget.dto.response.BalanceResponse;
 import com.WinkProject.budget.dto.response.BudgetDetailResponse;
 import com.WinkProject.budget.dto.response.BudgetResponse;
@@ -85,4 +86,11 @@ public class BudgetController {
         budgetService.addBankAccount(groupId,bankAccount);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{groupId}/transfer")
+    public ResponseEntity<AdjustmentResponse> adjustment(@PathVariable("groupId")Long groupId){
+        AdjustmentResponse response = budgetService.getInfo(groupId);
+        return ResponseEntity.ok(response);
+    }
+
 }

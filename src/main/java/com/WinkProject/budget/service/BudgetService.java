@@ -6,16 +6,19 @@ import com.WinkProject.budget.dto.request.BankAccount;
 import com.WinkProject.budget.dto.request.HistoryRequest;
 import com.WinkProject.budget.dto.request.Kakao;
 import com.WinkProject.budget.dto.request.Toss;
+import com.WinkProject.budget.dto.response.AdjustmentResponse;
 import com.WinkProject.budget.dto.response.BudgetResponse;
 import com.WinkProject.budget.repository.BudgetRepository;
 import com.WinkProject.meeting.domain.Meeting;
 import com.WinkProject.meeting.repository.MeetingRepository;
+import com.WinkProject.member.domain.Member;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -101,5 +104,21 @@ public class BudgetService {
         Budget budget = budgetRepository.findByMeetingId(groupId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Budget not found"));
         budget.setAccountNumber(bankAccount.getBankAccountNumber());
         budgetRepository.save(budget);
+    }
+
+    public AdjustmentResponse getInfo(Long groupId){
+        Meeting meeting = meetingRepository.findById(groupId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Meeting not found"));
+        List<Long> member = meeting.getMembers().stream().map(Member::getMemberId).toList();
+
+        Budget budget = budgetRepository.findByMeetingId(groupId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Budget not found"));
+
+        return AdjustmentResponse.builder()
+                .accountNumber(budget.getAccountNumber())
+                .tossUrl(budget.getTossRemitLink())
+                .kakaoUrl(budget.getKakaoRemitLink())
+                .groupId(groupId)
+                .memberID(member)
+                .build();
+
     }
 }
