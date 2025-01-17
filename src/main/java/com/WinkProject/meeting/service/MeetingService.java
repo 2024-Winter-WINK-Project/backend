@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,9 +32,11 @@ public class MeetingService {
     private final SettlementRepository settlementRepository;
     private final AuthRepository authRepository;
     
-    public List<MeetingResponse> getLatestMeetings(int limit, Long userId) {
-        // TODO: Implement logic
-        return new ArrayList<>();
+    public List<MeetingBriefResponse> getLatestMeetings(int limit, Long userId) {
+        return meetingRepository.findLatestMeetings(userId, limit)
+            .stream()
+            .map(meeting -> MeetingBriefResponse.from(meeting, userId))
+            .collect(Collectors.toList());
     }
 
     public List<MeetingBriefResponse> getMeetingsByUserId(Long userId) {

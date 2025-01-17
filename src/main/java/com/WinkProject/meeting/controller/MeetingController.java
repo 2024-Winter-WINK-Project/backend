@@ -38,7 +38,7 @@ public class MeetingController {
         required = true
     )
     @GetMapping("/latest")
-    public ResponseEntity<List<MeetingResponse>> getLatestMeetings(
+    public ResponseEntity<List<MeetingBriefResponse>> getLatestMeetings(
             @RequestParam(defaultValue = "5") int limit,
             @RequestParam Long userId) {
         return ResponseEntity.ok(meetingService.getLatestMeetings(limit, userId));

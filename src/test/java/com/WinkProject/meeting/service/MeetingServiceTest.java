@@ -103,6 +103,59 @@ class MeetingServiceTest {
             // verify
             verify(meetingRepository).findMeetingsByUserId(userId);
         }
+
+        @Test
+        @DisplayName("최근 모임 N개 조회")
+        void getLatestMeetings() {
+            // given
+            Long userId = 1L;
+            int limit = 3;
+            List<Meeting> meetings = new ArrayList<>();
+            
+            // 더미 데이터 생성 (5개 생성하여 limit 동작 확인)
+            for (int i = 1; i <= 5; i++) {
+                Meeting meeting = new Meeting();
+                meeting.setId((long) i);
+                meeting.setName("테스트 모임 " + i);
+                meeting.setStartTime(LocalDateTime.now().plusDays(i));
+                meeting.setEndTime(LocalDateTime.now().plusDays(i).plusHours(2));
+                meeting.setOwnerId(i == 1 ? userId : userId + i);
+
+                // 장소 정보 설정
+                Place place = new Place();
+                place.setId((long) i);
+                place.setName("테스트 장소 " + i);
+                place.setAddress("서울시 강남구 테스트동 " + i);
+                place.setLatitude(37.5 + (i * 0.1));
+                place.setLongitude(127.0 + (i * 0.1));
+                meeting.setPlace(place);
+
+                meetings.add(meeting);
+            }
+
+            when(meetingRepository.findLatestMeetings(userId, limit)).thenReturn(meetings.subList(0, limit));
+
+            // when
+            List<MeetingBriefResponse> responses = meetingService.getLatestMeetings(limit, userId);
+
+            // then
+            assertThat(responses).hasSize(limit);
+            assertThat(responses.get(0).getName()).isEqualTo("테스트 모임 1");
+            assertThat(responses.get(0).isOwner()).isTrue();
+            assertThat(responses.get(1).getName()).isEqualTo("테스트 모임 2");
+            assertThat(responses.get(1).isOwner()).isFalse();
+            
+            // 각 모임의 기본 정보 확인
+            for (int i = 0; i < responses.size(); i++) {
+                MeetingBriefResponse response = responses.get(i);
+                assertThat(response.getId()).isEqualTo(i + 1);
+                assertThat(response.getStartTime()).isNotNull();
+                assertThat(response.getEndTime()).isNotNull();
+            }
+
+            // verify
+            verify(meetingRepository).findLatestMeetings(userId, limit);
+        }
     }
 
     @Nested

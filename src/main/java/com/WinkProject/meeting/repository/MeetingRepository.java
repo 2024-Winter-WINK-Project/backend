@@ -16,8 +16,9 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long> {
             "JOIN m.members mem " +
             "WHERE mem.auth.id = :userId " +
             "AND mem.isWithdrawn = false " +
-            "ORDER BY m.startTime DESC")
-    List<Meeting> findLatestMeetings(@Param("userId") Long userId, Pageable pageable);
+            "ORDER BY m.startTime DESC " +
+            "LIMIT :limit")
+    List<Meeting> findLatestMeetings(@Param("userId") Long userId, @Param("limit") int limit);
 
     @Query("SELECT DISTINCT m FROM Meeting m " +
             "JOIN FETCH m.members mem " +
