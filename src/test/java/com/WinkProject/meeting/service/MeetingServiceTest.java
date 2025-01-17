@@ -26,6 +26,7 @@ import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
 import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MeetingResponse;
+import com.WinkProject.meeting.dto.response.MemberProfileResponse;
 import com.WinkProject.meeting.repository.MeetingRepository;
 import com.WinkProject.meeting.repository.SettlementRepository;
 import com.WinkProject.member.domain.Auth;
@@ -335,6 +336,65 @@ class MeetingServiceTest {
             assertThat(response.getName()).isEqualTo("수정된 모임");
             assertThat(response.getDescription()).isEqualTo("기존 설명"); // 수정되지 않은 필드는 유지
             assertThat(response.getOwner().getId()).isEqualTo(ownerId);
+        }
+    }
+
+    @Nested
+    @DisplayName("모임 멤버 조회 테스트")
+    class GetMeetingMembersTest {
+        private Meeting testMeeting;
+        private List<Member> members;
+
+        @BeforeEach
+        void setUp() {
+            testMeeting = new Meeting();
+            testMeeting.setId(1L);
+            testMeeting.setName("테스트 모임");
+            members = new ArrayList<>();
+
+            // 멤버 3명 추가 (1명은 탈퇴)
+            for (int i = 1; i <= 3; i++) {
+                Auth auth = new Auth();
+                auth.setId((long) i);
+                auth.setNickname("테스트 유저 " + i);
+                auth.setProfileImage("profile" + i + ".jpg");
+
+                Member member = Member.createMember(testMeeting, auth, "닉네임 " + i);
+                member.setId((long) i);
+                if (i == 3) {
+                    member.setWithdrawn(true); // 3번 멤버는 탈퇴 처리
+                }
+                members.add(member);
+            }
+            testMeeting.setMembers(members);
+
+            // Mockito 설정
+            lenient().when(meetingRepository.findById(1L)).thenReturn(java.util.Optional.of(testMeeting));
+        }
+
+        @Test
+        @DisplayName("모임 멤버 목록 정상 조회")
+        void getMeetingMembersSuccess() {
+            // when
+            List<MemberProfileResponse> responses = meetingService.getMeetingMembers(1L);
+
+            // then
+            assertThat(responses).hasSize(2); // 탈퇴한 멤버 제외
+            assertThat(responses.get(0).getMemberId()).isEqualTo(1L);
+            assertThat(responses.get(0).getNickname()).isEqualTo("닉네임 1");
+            assertThat(responses.get(0).getProfileImageUrl()).isEqualTo("profile1.jpg");
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 모임의 멤버 조회")
+        void getMeetingMembersWithNonExistentMeeting() {
+            // given
+            when(meetingRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.getMeetingMembers(999L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임을 찾을 수 없습니다.");
         }
     }
 } 

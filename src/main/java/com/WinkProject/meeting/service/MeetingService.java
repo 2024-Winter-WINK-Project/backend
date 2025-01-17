@@ -163,8 +163,19 @@ public class MeetingService {
     }
 
     public List<MemberProfileResponse> getMeetingMembers(Long meetingId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMeetingMembers'");
+        // 1. 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        // 2. 멤버 목록을 MemberProfileResponse로 변환
+        return meeting.getMembers().stream()
+            .filter(member -> !member.isWithdrawn())  // 탈퇴하지 않은 멤버만 필터링
+            .map(member -> MemberProfileResponse.builder()
+                .memberId(member.getId())
+                .nickname(member.getNickname())
+                .profileImageUrl(member.getProfileImage())
+                .build())
+            .collect(Collectors.toList());
     }
 
     public void delegateOwner(Long meetingId, Long currentOwnerId, Long newOwnerId) {
