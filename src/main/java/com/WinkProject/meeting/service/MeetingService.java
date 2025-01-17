@@ -2,6 +2,7 @@ package com.WinkProject.meeting.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,7 @@ import com.WinkProject.meeting.domain.Settlement;
 import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
 import com.WinkProject.meeting.dto.response.InvitationResponse;
+import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MeetingResponse;
 import com.WinkProject.meeting.dto.response.MemberProfileResponse;
 import com.WinkProject.meeting.repository.MeetingRepository;
@@ -34,13 +36,15 @@ public class MeetingService {
         return new ArrayList<>();
     }
 
-    public List<MeetingResponse> getMeetingsByUserId(Long userId) {
-        // TODO: Implement logic
-        return new ArrayList<>();
+    public List<MeetingBriefResponse> getMeetingsByUserId(Long userId) {
+        List<Meeting> meetings = meetingRepository.findMeetingsByUserId(userId);
+        return meetings.stream()
+            .map(meeting -> MeetingBriefResponse.from(meeting, userId))
+            .collect(Collectors.toList());
     }
 
     @Transactional
-    public MeetingResponse createMeeting(MeetingCreateRequest request, Long userId) {
+    public MeetingResponse createMeeting(MeetingCreateRequest request, Long userId, String nickname) {
         // 1. Auth 조회
         Auth auth = authRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
@@ -50,7 +54,7 @@ public class MeetingService {
         meeting.setOwnerId(userId);  // 모임장 설정
 
         // 3. 모임장을 첫 번째 멤버로 추가
-        Member owner = Member.createMember(meeting, auth, "모임장");
+        Member owner = Member.createMember(meeting, auth, nickname);
         meeting.getMembers().add(owner);
 
         // 4. Meeting 저장

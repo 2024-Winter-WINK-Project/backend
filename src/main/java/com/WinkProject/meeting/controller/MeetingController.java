@@ -1,6 +1,7 @@
 package com.WinkProject.meeting.controller;
 
 import com.WinkProject.meeting.dto.response.InvitationResponse;
+import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MemberProfileResponse;
 import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
@@ -54,7 +55,7 @@ public class MeetingController {
         required = true
     )
     @GetMapping
-    public ResponseEntity<List<MeetingResponse>> getMeetings(@RequestParam Long userId) {
+    public ResponseEntity<List<MeetingBriefResponse>> getMeetings(@RequestParam Long userId) {
         return ResponseEntity.ok(meetingService.getMeetingsByUserId(userId));
     }
 
@@ -100,6 +101,11 @@ public class MeetingController {
         description = "사용자 ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
+    @Parameter(
+        name = "nickname",
+        description = "모임에서 사용할 닉네임",
+        required = true
+    )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
         description = "모임 생성 정보",
         required = true
@@ -107,8 +113,9 @@ public class MeetingController {
     @PostMapping
     public ResponseEntity<MeetingResponse> createMeeting(
             @RequestBody MeetingCreateRequest request,
-            @RequestParam Long userId) {
-        return ResponseEntity.ok(meetingService.createMeeting(request, userId));
+            @RequestParam Long userId,
+            @RequestParam String nickname) {
+        return ResponseEntity.ok(meetingService.createMeeting(request, userId, nickname));
     }
 
     @Operation(
