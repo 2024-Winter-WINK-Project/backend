@@ -1,26 +1,24 @@
 package com.WinkProject.meeting.service;
 
-import com.WinkProject.invitation.domain.Invitation;
-import com.WinkProject.invitation.dto.response.InvitationResponse;
-import com.WinkProject.invitation.repository.InvitationRepository;
-import com.WinkProject.meeting.domain.Meeting;
-import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
-import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
-import com.WinkProject.meeting.dto.response.MeetingResponse;
-import com.WinkProject.meeting.repository.MeetingRepository;
-import com.WinkProject.member.domain.Member;
-import com.WinkProject.member.domain.MemberRole;
-import com.WinkProject.member.repository.MemberRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Scheduled;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.WinkProject.invitation.repository.InvitationRepository;
+import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.meeting.domain.Settlement;
+import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
+import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
+import com.WinkProject.meeting.dto.response.InvitationResponse;
+import com.WinkProject.meeting.dto.response.MeetingResponse;
+import com.WinkProject.meeting.dto.response.MemberProfileResponse;
+import com.WinkProject.meeting.repository.MeetingRepository;
+import com.WinkProject.member.repository.MemberRepository;
+import com.WinkProject.member.domain.Member;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @Transactional(readOnly = true)
@@ -31,124 +29,102 @@ public class MeetingService {
     private final InvitationRepository invitationRepository;
 
     public List<MeetingResponse> getLatestMeetings(int limit, Long userId) {
-        return meetingRepository.findLatestMeetingDTOs(userId, PageRequest.of(0, limit));
+        // TODO: Implement logic
+        return new ArrayList<>();
     }
 
     public List<MeetingResponse> getMeetingsByUserId(Long userId) {
-        return memberRepository.findMeetingsByUserId(userId).stream()
-                .map(MeetingResponse::from)
-                .collect(Collectors.toList());
+        // TODO: Implement logic
+        return new ArrayList<>();
     }
 
     @Transactional
     public MeetingResponse createMeeting(MeetingCreateRequest request, Long userId) {
-        validateMeetingTime(request.getStartTime(), request.getEndTime());
-
+        // 1. Meeting 엔티티 생성
         Meeting meeting = request.toEntity();
-        meeting = meetingRepository.save(meeting);
+        meeting.setOwnerId(userId);  // 모임장 설정
 
-        Member member = Member.createOwner(meeting, userId);
-        memberRepository.save(member);
+        // 2. Settlement 정보가 있는 경우 Settlement 엔티티 생성 및 연결
+        if (request.getSettlement() != null) {
+            Settlement settlement = new Settlement(request.getSettlement());
+            meeting.setSettlement(settlement);
+        }
 
-        return MeetingResponse.from(meeting);
+        // 3. 모임장을 첫 번째 멤버로 추가
+        Member owner = Member.createMember(meeting, userId, "모임장");
+        meeting.getMembers().add(owner);
+
+        // 4. Meeting 저장 (Settlement와 Member는 CascadeType.ALL로 자동 저장)
+        Meeting savedMeeting = meetingRepository.save(meeting);
+
+        // 5. 응답 DTO 반환
+        return MeetingResponse.from(savedMeeting);
     }
 
-    @Transactional
     public MeetingResponse updateMeeting(Long meetingId, MeetingUpdateRequest request, Long userId) {
-        Meeting meeting = findMeetingAndValidateOwner(meetingId, userId);
-        validateMeetingTime(request.getStartTime(), request.getEndTime());
-
-        // Update meeting details
-        meeting.setName(request.getName());
-        meeting.setDescription(request.getDescription());
-        meeting.setStartTime(request.getStartTime());
-        meeting.setEndTime(request.getEndTime());
-
-        // Update place details
-        meeting.getPlace().setName(request.getPlace().getName());
-        meeting.getPlace().setAddress(request.getPlace().getAddress());
-        meeting.getPlace().setLatitude(request.getPlace().getLatitude());
-        meeting.getPlace().setLongitude(request.getPlace().getLongitude());
-
-        return MeetingResponse.from(meeting);
+        // TODO: Implement logic
+        return new MeetingResponse();
     }
 
-    @Transactional
     public void deleteMeeting(Long meetingId, Long userId) {
-        Meeting meeting = findMeetingAndValidateOwner(meetingId, userId);
-        meetingRepository.delete(meeting);
+        // TODO: Implement logic
     }
 
-    @Transactional
     public InvitationResponse createInvitation(Long meetingId, Long userId) {
-        Meeting meeting = findMeetingAndValidateOwner(meetingId, userId);
-
-        String inviteCode = generateUniqueInviteCode();
-        Invitation invitation = new Invitation();
-        invitation.setMeeting(meeting);
-        invitation.setInviteCode(inviteCode);
-
-        invitation = invitationRepository.save(invitation);
-        return InvitationResponse.from(invitation);
+        // TODO: Implement logic
+        return new InvitationResponse();
     }
 
-    public InvitationResponse validateInvitation(Long meetingId, String inviteCode) {
-        Invitation invitation = invitationRepository.findByMeetingIdAndInviteCode(meetingId, inviteCode)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 초대 코드입니다."));
-
-        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("만료된 초대 코드입니다.");
-        }
-
-        return InvitationResponse.from(invitation);
+    public boolean validateInvitation(Long meetingId, String invitationCode) {
+        // TODO: Implement logic
+        return false;
     }
 
-    private Meeting findMeetingAndValidateOwner(Long meetingId, Long userId) {
-        Meeting meeting = meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 모임입니다."));
-
-        boolean isOwner = meeting.getMembers().stream()
-                .anyMatch(member -> member.getMemberId().equals(userId) && member.getRole() == MemberRole.OWNER);
-
-        if (!isOwner) {
-            throw new IllegalArgumentException("모임장만 이 작업을 수행할 수 있습니다.");
-        }
-
-        return meeting;
+    public void kickMember(Long meetingId, Long targetUserId, Long userId) {
+        // TODO: 모임 멤버 강제 퇴장 로직 구현
     }
 
-    private String generateUniqueInviteCode() {
-        int maxAttempts = 5;
-        int attempts = 0;
-
-        while (attempts < maxAttempts) {
-            String code = UUID.randomUUID().toString().substring(0, 8);
-            if (!invitationRepository.existsByInviteCode(code)) {
-                return code;
-            }
-            attempts++;
-        }
-
-        throw new RuntimeException("초대 코드 생성에 실패했습니다.");
+    public String getInvitationLink(Long meetingId, Long userId) {
+        // TODO: 모임 초대 링크 조회 로직 구현
+        return "";
     }
 
-    private void validateMeetingTime(LocalDateTime startTime, LocalDateTime endTime) {
-        if (startTime == null || endTime == null) {
-            throw new IllegalArgumentException("시작 시간과 종료 시간은 필수입니다.");
-        }
-
-        if (startTime.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("시작 시간은 현재 시간 이후여야 합니다.");
-        }
-
-        if (endTime.isBefore(startTime)) {
-            throw new IllegalArgumentException("종료 시간은 시작 시간 이후여야 합니다.");
-        }
-    }
-
-    @Scheduled(cron = "0 0 * * * *") // 매 시 정각마다 실행
     @Transactional
-    public void cleanupExpiredInvitations() {
-        invitationRepository.deleteAllExpired(LocalDateTime.now());
+    public void requestJoinMeeting(String invitationCode, String nickname) {
+        // TODO: 모임 가입 신청 로직 구현
+    }
+
+    public void leaveMeeting(Long meetingId, Long userId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'leaveMeeting'");
+    }
+
+    public List<MemberProfileResponse> getMeetingMembers(Long meetingId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getMeetingMembers'");
+    }
+
+    public void delegateOwner(Long meetingId, Long currentOwnerId, Long newOwnerId) {
+        // 1. 현재 사용자가 모임장인지 확인
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+        
+        if (!meeting.isOwner(currentOwnerId)) {
+            throw new IllegalArgumentException("모임장만 권한을 위임할 수 있습니다.");
+        }
+
+        // 2. 새로운 모임장이 모임의 멤버인지 확인 및 권한 위임
+        meeting.changeOwner(newOwnerId);
+        meetingRepository.save(meeting);
+    }
+
+    public Object getMeetingDetail(Long meetingId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getMeetingDetail'");
+    }
+
+    public void delegateLeader(Long meetingId, Long userId, Long newLeaderId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'delegateLeader'");
     }
 } 
