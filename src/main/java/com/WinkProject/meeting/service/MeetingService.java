@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.meeting.domain.Place;
 import com.WinkProject.meeting.domain.Settlement;
 import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
@@ -77,9 +78,55 @@ public class MeetingService {
         settlementRepository.save(settlement);
     }
 
+    @Transactional
     public MeetingResponse updateMeeting(Long meetingId, MeetingUpdateRequest request, Long userId) {
-        // TODO: Implement logic
-        return new MeetingResponse();
+        // 1. 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        // 2. 권한 확인 (모임장만 수정 가능)
+        if (!meeting.isOwner(userId)) {
+            throw new IllegalArgumentException("모임장만 모임 정보를 수정할 수 있습니다.");
+        }
+
+        // 3. 비어있지 않은 필드만 업데이트
+        if (request.getName() != null) {
+            meeting.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            meeting.setDescription(request.getDescription());
+        }
+        if (request.getStartTime() != null) {
+            meeting.setStartTime(request.getStartTime());
+        }
+        if (request.getEndTime() != null) {
+            meeting.setEndTime(request.getEndTime());
+        }
+        if (request.getPlace() != null) {
+            Place place = meeting.getPlace();
+            if (place == null) {
+                place = new Place();
+                meeting.setPlace(place);
+            }
+            
+            MeetingUpdateRequest.PlaceRequest placeRequest = request.getPlace();
+            if (placeRequest.getName() != null) {
+                place.setName(placeRequest.getName());
+            }
+            if (placeRequest.getAddress() != null) {
+                place.setAddress(placeRequest.getAddress());
+            }
+            if (placeRequest.getLatitude() != null) {
+                place.setLatitude(placeRequest.getLatitude());
+            }
+            if (placeRequest.getLongitude() != null) {
+                place.setLongitude(placeRequest.getLongitude());
+            }
+        }
+
+        // 4. 변경사항 저장 및 응답 반환
+        Meeting updatedMeeting = meetingRepository.save(meeting);
+        return MeetingResponse.from(updatedMeeting);
     }
 
     public void deleteMeeting(Long meetingId, Long userId) {

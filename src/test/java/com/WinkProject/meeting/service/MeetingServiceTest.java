@@ -1,9 +1,11 @@
 package com.WinkProject.meeting.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.WinkProject.meeting.domain.Meeting;
 import com.WinkProject.meeting.domain.Place;
 import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
+import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
 import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MeetingResponse;
 import com.WinkProject.meeting.repository.MeetingRepository;
@@ -222,6 +225,116 @@ class MeetingServiceTest {
             assertThat(response.getOwner().getNickname()).isEqualTo(nickname);
             verify(meetingRepository).save(any(Meeting.class));
             verify(authRepository).findById(1L);
+        }
+    }
+
+    @Nested
+    @DisplayName("모임 수정 테스트")
+    class UpdateMeetingTest {
+        private Meeting testMeeting;
+        private Long ownerId = 1L;
+        private Long nonOwnerId = 2L;
+        private Member ownerMember;
+
+        @BeforeEach
+        void setUp() {
+            // 모임장 Auth 설정
+            Auth ownerAuth = new Auth();
+            ownerAuth.setId(ownerId);
+            ownerAuth.setNickname("모임장");
+            
+            // 모임 설정
+            testMeeting = new Meeting();
+            testMeeting.setId(1L);
+            testMeeting.setName("기존 모임");
+            testMeeting.setDescription("기존 설명");
+            testMeeting.setOwnerId(ownerId);
+            testMeeting.setStartTime(LocalDateTime.now().plusDays(1));
+            testMeeting.setEndTime(LocalDateTime.now().plusDays(1).plusHours(2));
+
+            // 장소 설정
+            Place place = new Place();
+            place.setName("기존 장소");
+            place.setAddress("기존 주소");
+            place.setLatitude(37.5);
+            place.setLongitude(127.0);
+            testMeeting.setPlace(place);
+
+            // 모임장 멤버 설정
+            ownerMember = Member.createMember(testMeeting, ownerAuth, "모임장");
+            ownerMember.setId(ownerId);
+            testMeeting.getMembers().add(ownerMember);
+
+            // Mockito 설정
+            lenient().when(meetingRepository.findById(1L)).thenReturn(java.util.Optional.of(testMeeting));
+            lenient().when(meetingRepository.save(any(Meeting.class))).thenAnswer(i -> i.getArgument(0));
+        }
+
+        @Test
+        @DisplayName("모임 정보 정상 수정")
+        void updateMeetingSuccess() {
+            // given
+            MeetingUpdateRequest request = new MeetingUpdateRequest();
+            request.setName("수정된 모임");
+            request.setDescription("수정된 설명");
+            
+            MeetingUpdateRequest.PlaceRequest placeRequest = new MeetingUpdateRequest.PlaceRequest();
+            placeRequest.setName("수정된 장소");
+            request.setPlace(placeRequest);
+
+            // when
+            MeetingResponse response = meetingService.updateMeeting(1L, request, ownerId);
+
+            // then
+            assertThat(response.getName()).isEqualTo("수정된 모임");
+            assertThat(response.getDescription()).isEqualTo("수정된 설명");
+            assertThat(response.getPlace().getName()).isEqualTo("수정된 장소");
+            assertThat(response.getPlace().getAddress()).isEqualTo("기존 주소"); // 수정되지 않은 필드는 유지
+            assertThat(response.getOwner().getId()).isEqualTo(ownerId);
+        }
+
+        @Test
+        @DisplayName("모임장이 아닌 사용자가 수정 시도")
+        void updateMeetingByNonOwner() {
+            // given
+            MeetingUpdateRequest request = new MeetingUpdateRequest();
+            request.setName("수정된 모임");
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.updateMeeting(1L, request, nonOwnerId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임장만 모임 정보를 수정할 수 있습니다.");
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 모임 수정 시도")
+        void updateNonExistentMeeting() {
+            // given
+            when(meetingRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+            MeetingUpdateRequest request = new MeetingUpdateRequest();
+            request.setName("수정된 모임");
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.updateMeeting(999L, request, ownerId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임을 찾을 수 없습니다.");
+        }
+
+        @Test
+        @DisplayName("일부 필드만 수정")
+        void updatePartialFields() {
+            // given
+            MeetingUpdateRequest request = new MeetingUpdateRequest();
+            request.setName("수정된 모임");
+            // description은 수정하지 않음
+
+            // when
+            MeetingResponse response = meetingService.updateMeeting(1L, request, ownerId);
+
+            // then
+            assertThat(response.getName()).isEqualTo("수정된 모임");
+            assertThat(response.getDescription()).isEqualTo("기존 설명"); // 수정되지 않은 필드는 유지
+            assertThat(response.getOwner().getId()).isEqualTo(ownerId);
         }
     }
 } 
