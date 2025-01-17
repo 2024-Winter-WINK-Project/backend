@@ -1,12 +1,12 @@
 package com.WinkProject.meeting.dto.request;
 
+import java.time.LocalDateTime;
+
 import com.WinkProject.meeting.domain.Meeting;
 import com.WinkProject.meeting.domain.Place;
-import com.WinkProject.meeting.domain.Settlement;
+
 import lombok.Getter;
 import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Setter
