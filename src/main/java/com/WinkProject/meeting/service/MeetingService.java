@@ -183,9 +183,13 @@ public class MeetingService {
         throw new UnsupportedOperationException("Unimplemented method 'delegateOwner'");
     }
 
-    public Object getMeetingDetail(Long meetingId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMeetingDetail'");
+    public MeetingResponse getMeetingDetail(Long meetingId) {
+        // 1. 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        // 2. 상세 정보를 포함한 응답 반환
+        return MeetingResponse.from(meeting);
     }
 
     public void delegateLeader(Long meetingId, Long userId, Long newLeaderId) {

@@ -86,7 +86,7 @@ public class MeetingController {
         required = true
     )
     @GetMapping("/{meetingId}")
-    public ResponseEntity<Object> getMeetingDetail(
+    public ResponseEntity<MeetingResponse> getMeetingDetail(
             @PathVariable Long meetingId) {
         return ResponseEntity.ok(meetingService.getMeetingDetail(meetingId));
     }
