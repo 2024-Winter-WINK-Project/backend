@@ -76,8 +76,8 @@ public class AuthService {
 
     }
     public boolean deleteAuth(Long userId){
-        Optional<Auth> Existauth = authRepository.findById(userId);
-        if (Existauth.isPresent() && !memberRepository.existsBySocialId(userId)){ //TODO 회원 탈퇴 거절 케이스 나누기
+        Optional<Auth> existAuth = authRepository.findById(userId);
+        if (existAuth.isPresent() && existAuth.get().getMembers().isEmpty()){ //TODO 회원 탈퇴 거절 케이스 나누기
             authRepository.deleteById(userId);
             return true;
         }
