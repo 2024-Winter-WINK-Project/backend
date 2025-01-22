@@ -47,7 +47,7 @@ public class AuthController {
         String accessToken = authService.getAccessToken(code);
         KakaoUserInfoResponse kakaoUserInfoResponse = authService.getUserInfo(accessToken);
 
-        // DB에 auth 정보 저장
+        // DB에 auth 정보 저장 만약 이미 저장되어 있으면 continue
         Long userID = kakaoUserInfoResponse.getId();
         String profileUrl = kakaoUserInfoResponse.getKakaoAccount().getProfile().getProfileImageUrl();
         authService.saveAuth(userID,profileUrl);
