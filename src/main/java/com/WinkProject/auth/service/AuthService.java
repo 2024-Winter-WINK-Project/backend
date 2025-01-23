@@ -7,13 +7,16 @@ import com.WinkProject.auth.repository.AuthRepository;
 import com.WinkProject.auth.schema.Auth;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
@@ -67,6 +70,17 @@ public class AuthService {
 
 
     }
+    public void kakaoLogOut(String accessToken){
+        WebClient.create(KAUTH_USER_URL_HOST).post()
+                .uri(uriBuilder -> uriBuilder
+                        .scheme("https")
+                        .path("v1/user/unlink")
+                        .build(true))
+                .header(HttpHeaders.AUTHORIZATION,"Bearer "+accessToken)
+                .header(HttpHeaders.CONTENT_TYPE,HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString())
+                .exchangeToMono(response -> Mono.empty())
+                .block();
+    }
 
     public UserInfoResponse saveAuth(Long userId,String nickName, String profileUrl){
         Auth existAuth = authRepository.findById(userId).orElse(null);
@@ -92,7 +106,17 @@ public class AuthService {
         }
     }
 
-    public boolean logout(HttpServletResponse response){
+    public boolean logout(HttpServletRequest request, HttpServletResponse response){
+        HttpSession session = request.getSession(false);
+
+        if(session == null){
+            return false;
+        }
+        String accessToken = (String)session.getAttribute("accessToken");
+        kakaoLogOut(accessToken);
+
+        session.invalidate();
+
         Cookie cookie = new Cookie("jwt",null);
         cookie.setHttpOnly(true); // 생성 시와 동일하게 설정
         cookie.setSecure(true); // 생성 시와 동일하게 설정

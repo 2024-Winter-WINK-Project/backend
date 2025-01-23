@@ -5,7 +5,9 @@ import com.WinkProject.auth.dto.UserInfoResponse;
 import com.WinkProject.auth.service.AuthService;
 import com.WinkProject.security.jwt.JwtTokenProvider;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,8 +46,12 @@ public class AuthController {
     }
     @GetMapping("/auth/callback") //TODO 나중에 /kakao/login 로 변경 후 프론트에서 인가 코드만 받아오기
     @ResponseBody
-    public ResponseEntity<UserInfoResponse> callback(@RequestParam("code") String code, HttpServletResponse response)  {
+    public ResponseEntity<UserInfoResponse> callback(@RequestParam("code") String code, HttpServletRequest request, HttpServletResponse response)  {
         String accessToken = authService.getAccessToken(code);
+
+        HttpSession session = request.getSession();
+        session.setAttribute("accessToken",accessToken);
+
         KakaoUserInfoResponse kakaoUserInfoResponse = authService.getUserInfo(accessToken);
 
         // DB에 auth 정보 저장 만약 이미 저장되어 있으면 continue
@@ -82,8 +88,8 @@ public class AuthController {
 
     @GetMapping("/auth/logout")
     @ResponseBody
-    public ResponseEntity<?> logout(HttpServletResponse response){
-        boolean logOutSuccess = authService.logout(response);
+    public ResponseEntity<?> logout(HttpServletRequest request,HttpServletResponse response){
+        boolean logOutSuccess = authService.logout(request ,response);
         if (logOutSuccess){
             return new ResponseEntity<>(HttpStatus.OK);
         }
