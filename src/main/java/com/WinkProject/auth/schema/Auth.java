@@ -19,6 +19,9 @@ public class Auth {
     private Long socialId ;
 
     @Column
+    private String nickName;
+
+    @Column
     private String profileUrl;
 
     @OneToMany(mappedBy = "auth", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

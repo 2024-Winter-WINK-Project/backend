@@ -2,8 +2,8 @@ package com.WinkProject.auth.service;
 
 import com.WinkProject.auth.dto.KakaoTokenResponse;
 import com.WinkProject.auth.dto.KakaoUserInfoResponse;
+import com.WinkProject.auth.dto.UserInfoResponse;
 import com.WinkProject.auth.repository.AuthRepository;
-import com.WinkProject.auth.repository.MemberRepository;
 import com.WinkProject.auth.schema.Auth;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import jakarta.servlet.http.Cookie;
@@ -28,7 +28,6 @@ public class AuthService {
     private String redirectUri;
 
     private final AuthRepository authRepository;
-    private final MemberRepository memberRepository;
 
     private static final String KAUTH_TOKEN_URL_HOST = "https://kauth.kakao.com";
     private static final String KAUTH_USER_URL_HOST = "https://kapi.kakao.com";
@@ -69,11 +68,15 @@ public class AuthService {
 
     }
 
-    public void saveAuth(Long userId, String profileUrl){
+    public UserInfoResponse saveAuth(Long userId,String nickName, String profileUrl){
         Auth existAuth = authRepository.findById(userId).orElse(null);
         if(existAuth == null){
-            Auth auth = Auth.builder().socialId(userId).profileUrl(profileUrl).build();
+            Auth auth = Auth.builder().socialId(userId).nickName(nickName).profileUrl(profileUrl).build();
             authRepository.save(auth);
+            return UserInfoResponse.builder().loginState("REGISTER").memberId(userId).nickName(nickName).profileUrl(profileUrl).build();
+        }
+        else{
+            return UserInfoResponse.builder().loginState("EXIST").memberId(userId).nickName(nickName).profileUrl(profileUrl).build();
         }
 
 

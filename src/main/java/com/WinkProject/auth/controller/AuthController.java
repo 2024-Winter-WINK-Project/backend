@@ -1,6 +1,7 @@
 package com.WinkProject.auth.controller;
 
 import com.WinkProject.auth.dto.KakaoUserInfoResponse;
+import com.WinkProject.auth.dto.UserInfoResponse;
 import com.WinkProject.auth.service.AuthService;
 import com.WinkProject.security.jwt.JwtTokenProvider;
 import jakarta.servlet.http.Cookie;
@@ -43,14 +44,16 @@ public class AuthController {
     }
     @GetMapping("/auth/callback") //TODO 나중에 /kakao/login 로 변경 후 프론트에서 인가 코드만 받아오기
     @ResponseBody
-    public ResponseEntity<?> callback(@RequestParam("code") String code, HttpServletResponse response)  {
+    public ResponseEntity<UserInfoResponse> callback(@RequestParam("code") String code, HttpServletResponse response)  {
         String accessToken = authService.getAccessToken(code);
         KakaoUserInfoResponse kakaoUserInfoResponse = authService.getUserInfo(accessToken);
 
         // DB에 auth 정보 저장 만약 이미 저장되어 있으면 continue
         Long userID = kakaoUserInfoResponse.getId();
         String profileUrl = kakaoUserInfoResponse.getKakaoAccount().getProfile().getProfileImageUrl();
-        authService.saveAuth(userID,profileUrl);
+        String nickName = kakaoUserInfoResponse.getKakaoAccount().getProfile().getNickName();
+        //유저 정보 응답 생성
+        UserInfoResponse userInfoResponse = authService.saveAuth(userID,nickName,profileUrl);
 
         //쿠키 생성,jwt 전달
         String token = jwtTokenProvider.createToken(kakaoUserInfoResponse.getId());
@@ -58,9 +61,9 @@ public class AuthController {
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
         cookie.setPath("/");
-        cookie.setMaxAge(60*60); // 1시간 동안 유효
+        cookie.setMaxAge(60*30); // 30분 동안 유효
         response.addCookie(cookie);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(userInfoResponse);
     }
 
     @DeleteMapping("/auth/withdraw")
