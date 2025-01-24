@@ -189,11 +189,11 @@ public class MeetingController {
         required = true
     )
     @PostMapping("/{meetingId}/delegate")
-    public ResponseEntity<Void> delegateLeader(
+    public ResponseEntity<Void> delegateOwner(
             @PathVariable Long meetingId,
             @RequestParam Long userId,
             @RequestParam Long newLeaderId) {
-        meetingService.delegateLeader(meetingId, userId, newLeaderId);
+        meetingService.delegateOwner(meetingId, userId, newLeaderId);
         return ResponseEntity.ok().build();
     }
 

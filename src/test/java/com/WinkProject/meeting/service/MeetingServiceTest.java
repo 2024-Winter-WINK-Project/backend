@@ -6,10 +6,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.lenient;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.never;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -484,6 +487,58 @@ class MeetingServiceTest {
             assertThatThrownBy(() -> meetingService.getMeetingDetail(999L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("모임을 찾을 수 없습니다.");
+        }
+    }
+
+    @Nested
+    @DisplayName("모임 삭제 테스트")
+    class DeleteMeetingTest {
+        private Meeting testMeeting;
+        private Long ownerId = 1L;
+        private Long nonOwnerId = 2L;
+
+        @BeforeEach
+        void setUp() {
+            testMeeting = new Meeting();
+            testMeeting.setId(1L);
+            testMeeting.setOwnerId(ownerId);
+            
+            lenient().when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+        }
+
+        @Test
+        @DisplayName("모임장은 모임을 삭제할 수 있다")
+        void deleteMeetingByOwnerSuccess() {
+            // when
+            assertDoesNotThrow(() -> meetingService.deleteMeeting(1L, ownerId));
+
+            // then
+            verify(meetingRepository).delete(testMeeting);
+        }
+
+        @Test
+        @DisplayName("모임장이 아닌 사용자는 모임을 삭제할 수 없다")
+        void deleteMeetingByNonOwnerFail() {
+            // when & then
+            assertThatThrownBy(() -> meetingService.deleteMeeting(1L, nonOwnerId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임장만 모임을 삭제할 수 있습니다.");
+
+            verify(meetingRepository, never()).delete(any());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 모임을 삭제하려고 하면 예외가 발생한다")
+        void deleteMeetingNotFound() {
+            // given
+            when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.deleteMeeting(999L, ownerId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임을 찾을 수 없습니다.");
+
+            verify(meetingRepository, never()).delete(any());
         }
     }
 } 
