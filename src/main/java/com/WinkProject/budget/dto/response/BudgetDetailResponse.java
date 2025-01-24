@@ -9,6 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class BudgetDetailResponse {
     private String category;
+    private boolean plus;
     private Long amount;
     private String description;
 }

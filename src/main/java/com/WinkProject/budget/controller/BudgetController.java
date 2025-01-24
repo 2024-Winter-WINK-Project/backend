@@ -42,6 +42,7 @@ public class BudgetController {
             budgetResponse.setDetails(budget.getDetails() != null
                     ? budget.getDetails().stream().map((detail)-> new BudgetDetailResponse(
                         detail.getCategory(),
+                            detail.getAmount() >= 0,
                         Math.abs(detail.getAmount()),
                         detail.getDescription()
             )).collect(Collectors.toCollection(ArrayList::new))
