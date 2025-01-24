@@ -541,4 +541,76 @@ class MeetingServiceTest {
             verify(meetingRepository, never()).delete(any());
         }
     }
+
+    @Nested
+    @DisplayName("모임 탈퇴 테스트")
+    class LeaveMeetingTest {
+        private Meeting testMeeting;
+        private Member ownerMember;
+        private Member normalMember;
+        private Long ownerId = 1L;
+        private Long normalUserId = 2L;
+
+        @BeforeEach
+        void setUp() {
+            // 모임 설정
+            testMeeting = new Meeting();
+            testMeeting.setId(1L);
+            testMeeting.setOwnerId(ownerId);
+
+            // 모임장 설정
+            Auth ownerAuth = new Auth();
+            ownerAuth.setId(ownerId);
+            ownerMember = Member.createMember(testMeeting, ownerAuth, "모임장");
+            testMeeting.getMembers().add(ownerMember);
+
+            // 일반 멤버 설정
+            Auth normalAuth = new Auth();
+            normalAuth.setId(normalUserId);
+            normalMember = Member.createMember(testMeeting, normalAuth, "일반 멤버");
+            testMeeting.getMembers().add(normalMember);
+
+            lenient().when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+        }
+
+        @Test
+        @DisplayName("일반 멤버는 모임을 탈퇴할 수 있다")
+        void leaveMeetingSuccess() {
+            // when
+            meetingService.leaveMeeting(1L, normalUserId);
+
+            // then
+            assertThat(normalMember.isWithdrawn()).isTrue();
+        }
+
+        @Test
+        @DisplayName("모임장은 모임을 탈퇴할 수 없다")
+        void leaveMeetingByOwnerFail() {
+            // when & then
+            assertThatThrownBy(() -> meetingService.leaveMeeting(1L, ownerId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임장은 탈퇴할 수 없습니다. 먼저 모임장 위임이 필요합니다.");
+        }
+
+        @Test
+        @DisplayName("모임의 멤버가 아닌 사용자는 탈퇴할 수 없다")
+        void leaveMeetingByNonMemberFail() {
+            // when & then
+            assertThatThrownBy(() -> meetingService.leaveMeeting(1L, 999L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임의 멤버가 아닙니다.");
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 모임에서 탈퇴할 수 없다")
+        void leaveMeetingFromNonExistentMeeting() {
+            // given
+            when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.leaveMeeting(999L, normalUserId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임을 찾을 수 없습니다.");
+        }
+    }
 } 

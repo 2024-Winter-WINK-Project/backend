@@ -133,15 +133,50 @@ public class MeetingService {
     public void deleteMeeting(Long meetingId, Long userId) {
         // 1. 모임 조회
         Meeting meeting = meetingRepository.findById(meetingId)
-            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
-
+        .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+        
         // 2. 권한 확인 (모임장만 삭제 가능)
         if (!meeting.isOwner(userId)) {
             throw new IllegalArgumentException("모임장만 모임을 삭제할 수 있습니다.");
         }
-
+        
         // 3. 모임 삭제
         meetingRepository.delete(meeting);
+    }
+    
+    @Transactional
+    public void leaveMeeting(Long meetingId, Long userId) {
+        // 1. 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        // 2. 멤버 조회 및 유효성 검사
+        Member member = meeting.getMembers().stream()
+            .filter(m -> m.getAuth().getId().equals(userId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("모임의 멤버가 아닙니다."));
+
+        // 3. 모임장 탈퇴 제한
+        if (meeting.isOwner(userId)) {
+            throw new IllegalArgumentException("모임장은 탈퇴할 수 없습니다. 먼저 모임장 위임이 필요합니다.");
+        }
+
+        // 4. 탈퇴 처리
+        member.setWithdrawn(true);
+    }
+    
+    public void kickMember(Long meetingId, Long targetUserId, Long userId) {
+        // TODO: 모임 멤버 강제 퇴장 로직 구현
+    }
+    
+    public String getInvitationLink(Long meetingId, Long userId) {
+        // TODO: 모임 초대 링크 조회 로직 구현
+        return "";
+    }
+    
+    @Transactional
+    public void requestJoinMeeting(String invitationCode, String nickname) {
+        // TODO: 모임 가입 신청 로직 구현
     }
 
     public InvitationResponse createInvitation(Long meetingId, Long userId) {
@@ -153,25 +188,7 @@ public class MeetingService {
         // TODO: Implement logic
         return false;
     }
-
-    public void kickMember(Long meetingId, Long targetUserId, Long userId) {
-        // TODO: 모임 멤버 강제 퇴장 로직 구현
-    }
-
-    public String getInvitationLink(Long meetingId, Long userId) {
-        // TODO: 모임 초대 링크 조회 로직 구현
-        return "";
-    }
-
-    @Transactional
-    public void requestJoinMeeting(String invitationCode, String nickname) {
-        // TODO: 모임 가입 신청 로직 구현
-    }
-
-    public void leaveMeeting(Long meetingId, Long userId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'leaveMeeting'");
-    }
+    
 
     public List<MemberProfileResponse> getMeetingMembers(Long meetingId) {
         // 1. 모임 조회
