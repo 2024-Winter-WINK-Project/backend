@@ -9,8 +9,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class WinkProjectApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(WinkProjectApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(WinkProjectApplication.class, args);
+    }
 
 }

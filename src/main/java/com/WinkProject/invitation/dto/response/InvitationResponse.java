@@ -7,12 +7,13 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Getter @Setter
+@Getter
+@Setter
 public class InvitationResponse {
     private String inviteCode;
     private LocalDateTime expiresAt;
     private MeetingResponse meeting;
-    
+
     public static InvitationResponse from(Invitation invitation) {
         InvitationResponse response = new InvitationResponse();
         response.setInviteCode(invitation.getInviteCode());
