@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.WinkProject.meeting.domain.Meeting;
 import com.WinkProject.member.domain.Member;
+import com.WinkProject.member.domain.MemberRole;
 
 import lombok.Getter;
 import lombok.Setter;

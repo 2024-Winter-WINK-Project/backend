@@ -19,6 +19,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+// import jakarta.persistence.*; // TODO 문제 생길 시 import 교체
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

@@ -27,4 +27,8 @@ public class Budget {
 
     @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL)
     private List<BudgetDetail> details = new ArrayList<>();
+
+    private String kakaoRemitLink;
+    private String tossRemitLink;
+    private String accountNumber;
 } 

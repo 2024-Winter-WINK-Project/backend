@@ -1,6 +1,5 @@
 package com.WinkProject.meeting.controller;
 
-
 import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MemberProfileResponse;
 import com.WinkProject.invitation.dto.response.InvitationResponse;

@@ -11,6 +11,7 @@ import com.WinkProject.meeting.domain.Meeting;
 
 @Repository
 public interface MeetingRepository extends JpaRepository<Meeting, Long> {
+
     @Query("SELECT m FROM Meeting m " +
             "JOIN m.members mem " +
             "WHERE mem.auth.id = :authId " +
