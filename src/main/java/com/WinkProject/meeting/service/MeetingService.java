@@ -1,17 +1,20 @@
 package com.WinkProject.meeting.service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.WinkProject.invitation.dto.response.InvitationResponse;
 import com.WinkProject.meeting.domain.Meeting;
 import com.WinkProject.meeting.domain.Place;
 import com.WinkProject.meeting.domain.Settlement;
 import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
-import com.WinkProject.meeting.dto.response.InvitationResponse;
 import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MeetingResponse;
 import com.WinkProject.meeting.dto.response.MemberProfileResponse;
@@ -20,6 +23,9 @@ import com.WinkProject.meeting.repository.SettlementRepository;
 import com.WinkProject.member.domain.Auth;
 import com.WinkProject.member.domain.Member;
 import com.WinkProject.member.repository.AuthRepository;
+import com.WinkProject.invitation.domain.Invitation;
+import com.WinkProject.invitation.repository.InvitationRepository;
+import com.WinkProject.member.repository.MemberRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +36,8 @@ public class MeetingService {
     private final MeetingRepository meetingRepository;
     private final SettlementRepository settlementRepository;
     private final AuthRepository authRepository;
+    private final InvitationRepository invitationRepository;
+    private final MemberRepository memberRepository;
     
     public List<MeetingBriefResponse> getLatestMeetings(int limit, Long authId) {
         return meetingRepository.findLatestMeetingsByAuthId(authId, limit)
@@ -197,27 +205,103 @@ public class MeetingService {
         meetingRepository.save(meeting);
     }
     
-    public String getInvitationLink(Long meetingId, Long authId) {
-        // TODO: 모임 초대 링크 조회 로직 구현
-        return "";
+    @Transactional
+    public InvitationResponse createInvitation(Long meetingId, Long authId) {
+        // 1. 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        // 2. 권한 확인 (모임장인지)
+        if (!meeting.isOwner(authId)) {
+            throw new IllegalArgumentException("모임장만 초대할 수 있습니다.");
+        }
+
+        // 3. 기존 초대 코드 확인
+        Optional<Invitation> existingInvitation = invitationRepository.findByMeetingIdAndInviteCode(meetingId, null);
+        if (existingInvitation.isPresent() && existingInvitation.get().getExpiresAt().isAfter(LocalDateTime.now())) {
+            return InvitationResponse.from(existingInvitation.get());
+        }
+
+        // 4. 새로운 초대 코드 생성
+        String inviteCode;
+        int retryCount = 0;
+        do {
+            inviteCode = UUID.randomUUID().toString();
+            retryCount++;
+            if (retryCount > 5) {
+                throw new RuntimeException("초대 코드 생성에 실패했습니다.");
+            }
+        } while (invitationRepository.existsByInviteCode(inviteCode));
+
+        // 5. 초대 코드 저장
+        Invitation invitation = new Invitation();
+        invitation.setMeeting(meeting);
+        invitation.setInviteCode(inviteCode);
+        invitation = invitationRepository.save(invitation);
+
+        // 6. 응답 반환
+        return InvitationResponse.from(invitation);
+    }
+    
+    public String getInvitationCode(Long meetingId, Long authId) {
+        // 1. 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        // 2. 권한 확인 (모임장인지)
+        if (!meeting.isOwner(authId)) {
+            throw new IllegalArgumentException("모임장만 초대 링크를 조회할 수 있습니다.");
+        }
+
+        // 3. 초대 코드 조회
+        Invitation invitation = invitationRepository.findByMeetingId(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("초대 코드를 먼저 생성해주세요."));
+
+        // 4. 만료 여부 확인
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("만료된 초대 코드입니다. 새로운 초대 코드를 생성해주세요.");
+        }
+
+        // 5. 초대 코드 생성 및 반환
+        return invitation.getInviteCode();
     }
     
     @Transactional
-    public void requestJoinMeeting(String invitationCode, String nickname) {
-        // TODO: 모임 가입 신청 로직 구현
-    }
+    public void requestJoinMeeting(String invitationCode, String nickname, Long authId) {
+        // 1. 초대 코드로 초대장 조회
+        Invitation invitation = invitationRepository.findByInviteCode(invitationCode)
+            .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 초대 코드입니다."));
 
-    public InvitationResponse createInvitation(Long meetingId, Long authId) {
-        // TODO: Implement logic
-        return new InvitationResponse();
-    }
+        // 2. 초대장 만료 여부 확인
+        if (invitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("만료된 초대 코드입니다.");
+        }
 
-    public boolean validateInvitation(Long meetingId, String invitationCode) {
-        // TODO: Implement logic
-        return false;
+        // 3. 모임 조회
+        Meeting meeting = invitation.getMeeting();
+
+        // 4. 이미 모임의 멤버인지 확인
+        boolean isAlreadyMember = meeting.getMembers().stream()
+            .anyMatch(m -> m.getAuth().getId().equals(authId) && !m.isWithdrawn());
+        if (isAlreadyMember) {
+            throw new IllegalArgumentException("이미 모임의 멤버입니다.");
+        }
+
+        // 5. 닉네임 중복 확인
+        if (memberRepository.existsByMeetingIdAndNicknameAndIsWithdrawnFalse(meeting.getId(), nickname)) {
+            throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
+        }
+
+        // 6. Auth 조회
+        Auth auth = authRepository.findById(authId)
+            .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        // 7. 멤버 생성 및 추가
+        Member newMember = Member.createMember(meeting, auth, nickname);
+        meeting.getMembers().add(newMember);
+        meetingRepository.save(meeting);
     }
     
-
     public List<MemberProfileResponse> getMeetingMembers(Long meetingId) {
         // 1. 모임 조회
         Meeting meeting = meetingRepository.findById(meetingId)

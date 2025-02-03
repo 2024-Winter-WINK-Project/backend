@@ -1,8 +1,9 @@
 package com.WinkProject.meeting.controller;
 
-import com.WinkProject.meeting.dto.response.InvitationResponse;
+
 import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MemberProfileResponse;
+import com.WinkProject.invitation.dto.response.InvitationResponse;
 import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
 import com.WinkProject.meeting.dto.response.MeetingResponse;
@@ -10,11 +11,11 @@ import com.WinkProject.meeting.service.MeetingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/meetings")
@@ -290,8 +291,14 @@ public class MeetingController {
     @GetMapping("/{meetingId}/invitations")
     public ResponseEntity<String> getInvitationLink(
             @PathVariable Long meetingId,
-            @RequestParam Long authId) {
-        return ResponseEntity.ok(meetingService.getInvitationLink(meetingId, authId));
+            @RequestParam Long authId,
+            HttpServletRequest request) {
+
+        String baseUrl = request.getRequestURL().toString().replace(request.getRequestURI(), "");
+        String invitationCode = meetingService.getInvitationCode(meetingId, authId);
+        String invitationLink = baseUrl + "/meetings/invitations/" + invitationCode + "/request";
+
+        return ResponseEntity.ok(invitationLink);
     }
 
     @Operation(
@@ -309,11 +316,17 @@ public class MeetingController {
         description = "가입 신청자 닉네임",
         required = true
     )
+    @Parameter(
+        name = "authId",
+        description = "Auth ID (인증 기능 연동 후 제거 예정)",
+        required = true
+    )
     @PostMapping("/invitations/{invitationCode}/request")
     public ResponseEntity<Void> requestJoinMeeting(
             @PathVariable String invitationCode,
-            @RequestParam String nickname) {
-        meetingService.requestJoinMeeting(invitationCode, nickname);
+            @RequestParam String nickname,
+            @RequestParam Long authId) {
+        meetingService.requestJoinMeeting(invitationCode, nickname, authId);
         return ResponseEntity.ok().build();
     }
 

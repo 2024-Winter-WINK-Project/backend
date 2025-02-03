@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,13 +31,15 @@ import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
 import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MeetingResponse;
-import com.WinkProject.meeting.dto.response.MemberProfileResponse;
 import com.WinkProject.meeting.repository.MeetingRepository;
 import com.WinkProject.meeting.repository.SettlementRepository;
 import com.WinkProject.member.domain.Auth;
 import com.WinkProject.member.domain.Member;
 import com.WinkProject.member.repository.AuthRepository;
 import com.WinkProject.member.repository.MemberRepository;
+import com.WinkProject.invitation.domain.Invitation;
+import com.WinkProject.invitation.repository.InvitationRepository;
+import com.WinkProject.invitation.dto.response.InvitationResponse;
 
 @ExtendWith(MockitoExtension.class)
 class MeetingServiceTest {
@@ -55,6 +58,9 @@ class MeetingServiceTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private InvitationRepository invitationRepository;
 
     @Nested
     @DisplayName("모임 조회 테스트")
@@ -868,6 +874,119 @@ class MeetingServiceTest {
 
             verify(meetingRepository).findById(999L);
             verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("초대 테스트")
+    class InvitationTest {
+        private Meeting meeting;
+        private Auth ownerAuth;
+        private Auth memberAuth;
+        private Member owner;
+        private String validInviteCode;
+        private Invitation invitation;
+
+        @BeforeEach
+        void setUp() {
+            // 모임 및 모임장 설정
+            ownerAuth = new Auth();
+            ownerAuth.setId(1L);
+            
+            meeting = new Meeting();
+            meeting.setId(1L);
+            meeting.setOwnerId(ownerAuth.getId());
+            
+            owner = Member.createMember(meeting, ownerAuth, "owner");
+            owner.setId(1L);  // Member ID 설정
+            meeting.getMembers().add(owner);
+
+            // 일반 멤버 설정
+            memberAuth = new Auth();
+            memberAuth.setId(2L);
+
+            // 초대장 설정
+            validInviteCode = UUID.randomUUID().toString();
+            invitation = new Invitation();
+            invitation.setId(1L);
+            invitation.setInviteCode(validInviteCode);
+            invitation.setMeeting(meeting);
+            invitation.setExpiresAt(LocalDateTime.now().plusDays(1));
+
+            // Mock 설정
+            lenient().when(meetingRepository.findById(1L)).thenReturn(Optional.of(meeting));
+        }
+
+        @Test
+        void createInvitation_Success() {
+            // given
+            when(invitationRepository.existsByInviteCode(any())).thenReturn(false);
+            when(invitationRepository.save(any(Invitation.class))).thenAnswer(invocation -> {
+                Invitation savedInvitation = invocation.getArgument(0);
+                savedInvitation.setId(1L);
+                savedInvitation.setMeeting(meeting);
+                savedInvitation.setInviteCode(UUID.randomUUID().toString());
+                savedInvitation.setExpiresAt(LocalDateTime.now().plusDays(1));
+                return savedInvitation;
+            });
+
+            // when
+            InvitationResponse response = meetingService.createInvitation(1L, ownerAuth.getId());
+
+            // then
+            assertNotNull(response);
+            assertNotNull(response.getInviteCode());
+            verify(invitationRepository).save(any(Invitation.class));
+        }
+
+        @Test
+        void requestJoinMeeting_Success() {
+            // given
+            String newNickname = "newMember";
+            when(invitationRepository.findByInviteCode(validInviteCode)).thenReturn(Optional.of(invitation));
+            when(memberRepository.existsByMeetingIdAndNicknameAndIsWithdrawnFalse(1L, newNickname)).thenReturn(false);
+            when(authRepository.findById(memberAuth.getId())).thenReturn(Optional.of(memberAuth));
+
+            // when
+            assertDoesNotThrow(() -> 
+                meetingService.requestJoinMeeting(validInviteCode, newNickname, memberAuth.getId()));
+
+            // then
+            verify(meetingRepository).save(any(Meeting.class));
+        }
+
+        @Test
+        void requestJoinMeeting_DuplicateNickname_Fail() {
+            // given
+            String existingNickname = "existingMember";
+            when(invitationRepository.findByInviteCode(validInviteCode)).thenReturn(Optional.of(invitation));
+            when(memberRepository.existsByMeetingIdAndNicknameAndIsWithdrawnFalse(1L, existingNickname)).thenReturn(true);
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                meetingService.requestJoinMeeting(validInviteCode, existingNickname, memberAuth.getId()));
+        }
+
+        @Test
+        void requestJoinMeeting_InvalidCode_Fail() {
+            // given
+            String invalidCode = "invalid-code";
+            when(invitationRepository.findByInviteCode(invalidCode)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                meetingService.requestJoinMeeting(invalidCode, "newMember", memberAuth.getId()));
+        }
+
+        @Test
+        void requestJoinMeeting_ExpiredCode_Fail() {
+            // given
+            invitation.setExpiresAt(LocalDateTime.now().minusDays(1));
+            when(invitationRepository.findByInviteCode(validInviteCode)).thenReturn(Optional.of(invitation));
+
+            // when & then
+            assertThrows(IllegalArgumentException.class, () ->
+                meetingService.requestJoinMeeting(validInviteCode, "newMember", memberAuth.getId()));
         }
     }
 } 

@@ -16,4 +16,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     List<Meeting> findMeetingsByUserId(@Param("userId") Long userId);
 
     Optional<Member> findByAuthId(Long authId);
+
+    boolean existsByMeetingIdAndNicknameAndIsWithdrawnFalse(Long meetingId, String nickname);
 } 
