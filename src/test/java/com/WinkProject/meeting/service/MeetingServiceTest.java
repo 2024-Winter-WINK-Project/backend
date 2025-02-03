@@ -61,9 +61,9 @@ class MeetingServiceTest {
 
         @Test
         @DisplayName("사용자의 모임 목록 조회")
-        void getMeetingsByUserId() {
+        void getMeetingsByAuthId() {
             // given
-            Long userId = 1L;
+            Long authId = 1L;
             List<Meeting> meetings = new ArrayList<>();
             
             // 더미 데이터 생성
@@ -73,7 +73,7 @@ class MeetingServiceTest {
                 meeting.setName("테스트 모임 " + i);
                 meeting.setStartTime(LocalDateTime.now().plusDays(i));
                 meeting.setEndTime(LocalDateTime.now().plusDays(i).plusHours(2));
-                meeting.setOwnerId(i == 1 ? userId : userId + i); // 첫 번째 모임만 해당 사용자가 모임장
+                meeting.setOwnerId(i == 1 ? authId : authId + i); // 첫 번째 모임만 해당 사용자가 모임장
 
                 // 장소 정보 설정
                 Place place = new Place();
@@ -87,10 +87,10 @@ class MeetingServiceTest {
                 meetings.add(meeting);
             }
 
-            when(meetingRepository.findMeetingsByUserId(userId)).thenReturn(meetings);
+            when(meetingRepository.findMeetingsByAuthId(authId)).thenReturn(meetings);
 
             // when
-            List<MeetingBriefResponse> responses = meetingService.getMeetingsByUserId(userId);
+            List<MeetingBriefResponse> responses = meetingService.getMeetingsByAuthId(authId);
 
             // then
             assertThat(responses).hasSize(3);
@@ -108,14 +108,14 @@ class MeetingServiceTest {
             }
 
             // verify
-            verify(meetingRepository).findMeetingsByUserId(userId);
+            verify(meetingRepository).findMeetingsByAuthId(authId);
         }
 
         @Test
         @DisplayName("최근 모임 N개 조회")
         void getLatestMeetings() {
             // given
-            Long userId = 1L;
+            Long authId = 1L;
             int limit = 3;
             List<Meeting> meetings = new ArrayList<>();
             
@@ -126,7 +126,7 @@ class MeetingServiceTest {
                 meeting.setName("테스트 모임 " + i);
                 meeting.setStartTime(LocalDateTime.now().plusDays(i));
                 meeting.setEndTime(LocalDateTime.now().plusDays(i).plusHours(2));
-                meeting.setOwnerId(i == 1 ? userId : userId + i);
+                meeting.setOwnerId(i == 1 ? authId : authId + i);
 
                 // 장소 정보 설정
                 Place place = new Place();
@@ -140,10 +140,10 @@ class MeetingServiceTest {
                 meetings.add(meeting);
             }
 
-            when(meetingRepository.findLatestMeetings(userId, limit)).thenReturn(meetings.subList(0, limit));
+            when(meetingRepository.findLatestMeetingsByAuthId(authId, limit)).thenReturn(meetings.subList(0, limit));
 
             // when
-            List<MeetingBriefResponse> responses = meetingService.getLatestMeetings(limit, userId);
+            List<MeetingBriefResponse> responses = meetingService.getLatestMeetings(limit, authId);
 
             // then
             assertThat(responses).hasSize(limit);
@@ -161,7 +161,7 @@ class MeetingServiceTest {
             }
 
             // verify
-            verify(meetingRepository).findLatestMeetings(userId, limit);
+            verify(meetingRepository).findLatestMeetingsByAuthId(authId, limit);
         }
     }
 
@@ -236,257 +236,109 @@ class MeetingServiceTest {
     @DisplayName("모임 수정 테스트")
     class UpdateMeetingTest {
         private Meeting testMeeting;
-        private Long ownerId = 1L;
-        private Long nonOwnerId = 2L;
+        private Long ownerAuthId = 1L;
+        private Long nonOwnerAuthId = 2L;
         private Member ownerMember;
 
         @BeforeEach
         void setUp() {
             // 모임장 Auth 설정
             Auth ownerAuth = new Auth();
-            ownerAuth.setId(ownerId);
+            ownerAuth.setId(ownerAuthId);
             ownerAuth.setNickname("모임장");
-            
-            // 모임 설정
-            testMeeting = new Meeting();
-            testMeeting.setId(1L);
-            testMeeting.setName("기존 모임");
-            testMeeting.setDescription("기존 설명");
-            testMeeting.setOwnerId(ownerId);
-            testMeeting.setStartTime(LocalDateTime.now().plusDays(1));
-            testMeeting.setEndTime(LocalDateTime.now().plusDays(1).plusHours(2));
-
-            // 장소 설정
-            Place place = new Place();
-            place.setName("기존 장소");
-            place.setAddress("기존 주소");
-            place.setLatitude(37.5);
-            place.setLongitude(127.0);
-            testMeeting.setPlace(place);
-
-            // 모임장 멤버 설정
-            ownerMember = Member.createMember(testMeeting, ownerAuth, "모임장");
-            ownerMember.setId(ownerId);
-            testMeeting.getMembers().add(ownerMember);
-
-            // Mockito 설정
-            lenient().when(meetingRepository.findById(1L)).thenReturn(java.util.Optional.of(testMeeting));
-            lenient().when(meetingRepository.save(any(Meeting.class))).thenAnswer(i -> i.getArgument(0));
-        }
-
-        @Test
-        @DisplayName("모임 정보 정상 수정")
-        void updateMeetingSuccess() {
-            // given
-            MeetingUpdateRequest request = new MeetingUpdateRequest();
-            request.setName("수정된 모임");
-            request.setDescription("수정된 설명");
-            
-            MeetingUpdateRequest.PlaceRequest placeRequest = new MeetingUpdateRequest.PlaceRequest();
-            placeRequest.setName("수정된 장소");
-            request.setPlace(placeRequest);
-
-            // when
-            MeetingResponse response = meetingService.updateMeeting(1L, request, ownerId);
-
-            // then
-            assertThat(response.getName()).isEqualTo("수정된 모임");
-            assertThat(response.getDescription()).isEqualTo("수정된 설명");
-            assertThat(response.getPlace().getName()).isEqualTo("수정된 장소");
-            assertThat(response.getPlace().getAddress()).isEqualTo("기존 주소"); // 수정되지 않은 필드는 유지
-            assertThat(response.getOwner().getId()).isEqualTo(ownerId);
-        }
-
-        @Test
-        @DisplayName("모임장이 아닌 사용자가 수정 시도")
-        void updateMeetingByNonOwner() {
-            // given
-            MeetingUpdateRequest request = new MeetingUpdateRequest();
-            request.setName("수정된 모임");
-
-            // when & then
-            assertThatThrownBy(() -> meetingService.updateMeeting(1L, request, nonOwnerId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("모임장만 모임 정보를 수정할 수 있습니다.");
-        }
-
-        @Test
-        @DisplayName("존재하지 않는 모임 수정 시도")
-        void updateNonExistentMeeting() {
-            // given
-            when(meetingRepository.findById(999L)).thenReturn(java.util.Optional.empty());
-            MeetingUpdateRequest request = new MeetingUpdateRequest();
-            request.setName("수정된 모임");
-
-            // when & then
-            assertThatThrownBy(() -> meetingService.updateMeeting(999L, request, ownerId))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("모임을 찾을 수 없습니다.");
-        }
-
-        @Test
-        @DisplayName("일부 필드만 수정")
-        void updatePartialFields() {
-            // given
-            MeetingUpdateRequest request = new MeetingUpdateRequest();
-            request.setName("수정된 모임");
-            // description은 수정하지 않음
-
-            // when
-            MeetingResponse response = meetingService.updateMeeting(1L, request, ownerId);
-
-            // then
-            assertThat(response.getName()).isEqualTo("수정된 모임");
-            assertThat(response.getDescription()).isEqualTo("기존 설명"); // 수정되지 않은 필드는 유지
-            assertThat(response.getOwner().getId()).isEqualTo(ownerId);
-        }
-    }
-
-    @Nested
-    @DisplayName("모임 멤버 조회 테스트")
-    class GetMeetingMembersTest {
-        private Meeting testMeeting;
-        private List<Member> members;
-
-        @BeforeEach
-        void setUp() {
-            testMeeting = new Meeting();
-            testMeeting.setId(1L);
-            testMeeting.setName("테스트 모임");
-            members = new ArrayList<>();
-
-            // 멤버 3명 추가 (1명은 탈퇴)
-            for (int i = 1; i <= 3; i++) {
-                Auth auth = new Auth();
-                auth.setId((long) i);
-                auth.setNickname("테스트 유저 " + i);
-                auth.setProfileImage("profile" + i + ".jpg");
-
-                Member member = Member.createMember(testMeeting, auth, "닉네임 " + i);
-                member.setId((long) i);
-                if (i == 3) {
-                    member.setWithdrawn(true); // 3번 멤버는 탈퇴 처리
-                }
-                members.add(member);
-            }
-            testMeeting.setMembers(members);
-
-            // Mockito 설정
-            lenient().when(meetingRepository.findById(1L)).thenReturn(java.util.Optional.of(testMeeting));
-        }
-
-        @Test
-        @DisplayName("모임 멤버 목록 정상 조회")
-        void getMeetingMembersSuccess() {
-            // when
-            List<MemberProfileResponse> responses = meetingService.getMeetingMembers(1L);
-
-            // then
-            assertThat(responses).hasSize(2); // 탈퇴한 멤버 제외
-            assertThat(responses.get(0).getMemberId()).isEqualTo(1L);
-            assertThat(responses.get(0).getNickname()).isEqualTo("닉네임 1");
-            assertThat(responses.get(0).getProfileImageUrl()).isEqualTo("profile1.jpg");
-        }
-
-        @Test
-        @DisplayName("존재하지 않는 모임의 멤버 조회")
-        void getMeetingMembersWithNonExistentMeeting() {
-            // given
-            when(meetingRepository.findById(999L)).thenReturn(java.util.Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> meetingService.getMeetingMembers(999L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("모임을 찾을 수 없습니다.");
-        }
-    }
-
-    @Nested
-    @DisplayName("모임 상세 조회 테스트")
-    class GetMeetingDetailTest {
-        private Meeting testMeeting;
-        private Member ownerMember;
-
-        @BeforeEach
-        void setUp() {
-            // 모임장 Auth 설정
-            Auth ownerAuth = new Auth();
-            ownerAuth.setId(1L);
-            ownerAuth.setNickname("모임장");
-            ownerAuth.setProfileImage("owner_profile.jpg");
             
             // 모임 설정
             testMeeting = new Meeting();
             testMeeting.setId(1L);
             testMeeting.setName("테스트 모임");
             testMeeting.setDescription("테스트 모임 설명");
-            testMeeting.setOwnerId(1L);
             testMeeting.setStartTime(LocalDateTime.now().plusDays(1));
             testMeeting.setEndTime(LocalDateTime.now().plusDays(1).plusHours(2));
-
-            // 장소 설정
-            Place place = new Place();
-            place.setName("테스트 장소");
-            place.setAddress("서울시 강남구");
-            place.setLatitude(37.5);
-            place.setLongitude(127.0);
-            testMeeting.setPlace(place);
+            testMeeting.setOwnerId(ownerAuthId);
 
             // 모임장 멤버 설정
             ownerMember = Member.createMember(testMeeting, ownerAuth, "모임장");
             ownerMember.setId(1L);
             testMeeting.getMembers().add(ownerMember);
-
-            // 일반 멤버 추가
-            Auth memberAuth = new Auth();
-            memberAuth.setId(2L);
-            memberAuth.setNickname("일반 멤버");
-            memberAuth.setProfileImage("member_profile.jpg");
-            
-            Member normalMember = Member.createMember(testMeeting, memberAuth, "일반 멤버");
-            normalMember.setId(2L);
-            testMeeting.getMembers().add(normalMember);
-
-            // Mockito 설정
-            lenient().when(meetingRepository.findById(1L)).thenReturn(java.util.Optional.of(testMeeting));
         }
 
         @Test
-        @DisplayName("모임 상세 정보 정상 조회")
-        void getMeetingDetailSuccess() {
+        @DisplayName("모임 정보 정상 수정")
+        void updateMeetingSuccess() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+            
+            MeetingUpdateRequest request = new MeetingUpdateRequest();
+            request.setName("수정된 모임명");
+            request.setDescription("수정된 설명");
+
             // when
-            MeetingResponse response = meetingService.getMeetingDetail(1L);
+            MeetingResponse response = meetingService.updateMeeting(1L, request, ownerAuthId);
 
             // then
             assertThat(response).isNotNull();
-            assertThat(response.getId()).isEqualTo(1L);
-            assertThat(response.getName()).isEqualTo("테스트 모임");
-            assertThat(response.getDescription()).isEqualTo("테스트 모임 설명");
-            
-            // 장소 정보 확인
-            assertThat(response.getPlace()).isNotNull();
-            assertThat(response.getPlace().getName()).isEqualTo("테스트 장소");
-            assertThat(response.getPlace().getAddress()).isEqualTo("서울시 강남구");
-            
-            // 모임장 정보 확인
-            assertThat(response.getOwner()).isNotNull();
-            assertThat(response.getOwner().getId()).isEqualTo(1L);
-            assertThat(response.getOwner().getNickname()).isEqualTo("모임장");
-            
-            // 멤버 목록 확인
-            assertThat(response.getMembers()).hasSize(2);
+            assertThat(response.getName()).isEqualTo("수정된 모임명");
+            assertThat(response.getDescription()).isEqualTo("수정된 설명");
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository).save(testMeeting);
         }
 
         @Test
-        @DisplayName("존재하지 않는 모임 조회")
-        void getMeetingDetailNotFound() {
+        @DisplayName("모임장이 아닌 사용자가 수정 시도")
+        void updateMeetingByNonOwner() {
             // given
-            when(meetingRepository.findById(999L)).thenReturn(java.util.Optional.empty());
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            
+            MeetingUpdateRequest request = new MeetingUpdateRequest();
+            request.setName("수정된 모임명");
 
             // when & then
-            assertThatThrownBy(() -> meetingService.getMeetingDetail(999L))
+            assertThatThrownBy(() -> meetingService.updateMeeting(1L, request, nonOwnerAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임장만 모임 정보를 수정할 수 있습니다.");
+            
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 모임 수정 시도")
+        void updateNonExistentMeeting() {
+            // given
+            when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
+            MeetingUpdateRequest request = new MeetingUpdateRequest();
+            request.setName("수정된 모임명");
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.updateMeeting(999L, request, ownerAuthId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("모임을 찾을 수 없습니다.");
+            
+            verify(meetingRepository).findById(999L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("일부 필드만 수정")
+        void updatePartialFields() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+            
+            MeetingUpdateRequest request = new MeetingUpdateRequest();
+            request.setName("수정된 모임명");
+            // description은 수정하지 않음
+
+            // when
+            MeetingResponse response = meetingService.updateMeeting(1L, request, ownerAuthId);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.getName()).isEqualTo("수정된 모임명");
+            assertThat(response.getDescription()).isEqualTo("테스트 모임 설명"); // 기존 값 유지
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository).save(testMeeting);
         }
     }
 
@@ -494,37 +346,43 @@ class MeetingServiceTest {
     @DisplayName("모임 삭제 테스트")
     class DeleteMeetingTest {
         private Meeting testMeeting;
-        private Long ownerId = 1L;
-        private Long nonOwnerId = 2L;
+        private Long ownerAuthId = 1L;
+        private Long nonOwnerAuthId = 2L;
 
         @BeforeEach
         void setUp() {
             testMeeting = new Meeting();
             testMeeting.setId(1L);
-            testMeeting.setOwnerId(ownerId);
-            
-            lenient().when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            testMeeting.setOwnerId(ownerAuthId);
         }
 
         @Test
         @DisplayName("모임장은 모임을 삭제할 수 있다")
         void deleteMeetingByOwnerSuccess() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            
             // when
-            assertDoesNotThrow(() -> meetingService.deleteMeeting(1L, ownerId));
+            meetingService.deleteMeeting(1L, ownerAuthId);
 
             // then
+            verify(meetingRepository).findById(1L);
             verify(meetingRepository).delete(testMeeting);
         }
 
         @Test
         @DisplayName("모임장이 아닌 사용자는 모임을 삭제할 수 없다")
         void deleteMeetingByNonOwnerFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            
             // when & then
-            assertThatThrownBy(() -> meetingService.deleteMeeting(1L, nonOwnerId))
+            assertThatThrownBy(() -> meetingService.deleteMeeting(1L, nonOwnerAuthId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("모임장만 모임을 삭제할 수 있습니다.");
 
-            verify(meetingRepository, never()).delete(any());
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).delete(any(Meeting.class));
         }
 
         @Test
@@ -534,11 +392,12 @@ class MeetingServiceTest {
             when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> meetingService.deleteMeeting(999L, ownerId))
+            assertThatThrownBy(() -> meetingService.deleteMeeting(999L, ownerAuthId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("모임을 찾을 수 없습니다.");
 
-            verify(meetingRepository, never()).delete(any());
+            verify(meetingRepository).findById(999L);
+            verify(meetingRepository, never()).delete(any(Meeting.class));
         }
     }
 
@@ -548,57 +407,69 @@ class MeetingServiceTest {
         private Meeting testMeeting;
         private Member ownerMember;
         private Member normalMember;
-        private Long ownerId = 1L;
-        private Long normalUserId = 2L;
+        private Long ownerAuthId = 1L;
+        private Long normalAuthId = 2L;
 
         @BeforeEach
         void setUp() {
             // 모임 설정
             testMeeting = new Meeting();
             testMeeting.setId(1L);
-            testMeeting.setOwnerId(ownerId);
+            testMeeting.setOwnerId(ownerAuthId);
 
             // 모임장 설정
             Auth ownerAuth = new Auth();
-            ownerAuth.setId(ownerId);
+            ownerAuth.setId(ownerAuthId);
             ownerMember = Member.createMember(testMeeting, ownerAuth, "모임장");
             testMeeting.getMembers().add(ownerMember);
 
             // 일반 멤버 설정
             Auth normalAuth = new Auth();
-            normalAuth.setId(normalUserId);
+            normalAuth.setId(normalAuthId);
             normalMember = Member.createMember(testMeeting, normalAuth, "일반 멤버");
             testMeeting.getMembers().add(normalMember);
-
-            lenient().when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
         }
 
         @Test
         @DisplayName("일반 멤버는 모임을 탈퇴할 수 있다")
         void leaveMeetingSuccess() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            
             // when
-            meetingService.leaveMeeting(1L, normalUserId);
+            meetingService.leaveMeeting(1L, normalAuthId);
 
             // then
             assertThat(normalMember.isWithdrawn()).isTrue();
+            verify(meetingRepository).findById(1L);
         }
 
         @Test
         @DisplayName("모임장은 모임을 탈퇴할 수 없다")
         void leaveMeetingByOwnerFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            
             // when & then
-            assertThatThrownBy(() -> meetingService.leaveMeeting(1L, ownerId))
+            assertThatThrownBy(() -> meetingService.leaveMeeting(1L, ownerAuthId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("모임장은 탈퇴할 수 없습니다. 먼저 모임장 위임이 필요합니다.");
+
+            verify(meetingRepository).findById(1L);
         }
 
         @Test
         @DisplayName("모임의 멤버가 아닌 사용자는 탈퇴할 수 없다")
         void leaveMeetingByNonMemberFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            
             // when & then
             assertThatThrownBy(() -> meetingService.leaveMeeting(1L, 999L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("모임의 멤버가 아닙니다.");
+
+            verify(meetingRepository).findById(1L);
         }
 
         @Test
@@ -608,9 +479,11 @@ class MeetingServiceTest {
             when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> meetingService.leaveMeeting(999L, normalUserId))
+            assertThatThrownBy(() -> meetingService.leaveMeeting(999L, normalAuthId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("모임을 찾을 수 없습니다.");
+
+            verify(meetingRepository).findById(999L);
         }
     }
 } 

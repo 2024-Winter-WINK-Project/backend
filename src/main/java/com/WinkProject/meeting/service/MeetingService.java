@@ -31,29 +31,29 @@ public class MeetingService {
     private final SettlementRepository settlementRepository;
     private final AuthRepository authRepository;
     
-    public List<MeetingBriefResponse> getLatestMeetings(int limit, Long userId) {
-        return meetingRepository.findLatestMeetings(userId, limit)
+    public List<MeetingBriefResponse> getLatestMeetings(int limit, Long authId) {
+        return meetingRepository.findLatestMeetingsByAuthId(authId, limit)
             .stream()
-            .map(meeting -> MeetingBriefResponse.from(meeting, userId))
+            .map(meeting -> MeetingBriefResponse.from(meeting, authId))
             .collect(Collectors.toList());
     }
 
-    public List<MeetingBriefResponse> getMeetingsByUserId(Long userId) {
-        List<Meeting> meetings = meetingRepository.findMeetingsByUserId(userId);
+    public List<MeetingBriefResponse> getMeetingsByAuthId(Long authId) {
+        List<Meeting> meetings = meetingRepository.findMeetingsByAuthId(authId);
         return meetings.stream()
-            .map(meeting -> MeetingBriefResponse.from(meeting, userId))
+            .map(meeting -> MeetingBriefResponse.from(meeting, authId))
             .collect(Collectors.toList());
     }
 
     @Transactional
-    public MeetingResponse createMeeting(MeetingCreateRequest request, Long userId, String nickname) {
+    public MeetingResponse createMeeting(MeetingCreateRequest request, Long authId, String nickname) {
         // 1. Auth 조회
-        Auth auth = authRepository.findById(userId)
+        Auth auth = authRepository.findById(authId)
             .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         // 2. Meeting 엔티티 생성
         Meeting meeting = request.toEntity();
-        meeting.setOwnerId(userId);  // 모임장 설정
+        meeting.setOwnerId(authId);  // 모임장 설정
 
         // 3. 모임장을 첫 번째 멤버로 추가
         Member owner = Member.createMember(meeting, auth, nickname);
@@ -79,13 +79,13 @@ public class MeetingService {
     }
 
     @Transactional
-    public MeetingResponse updateMeeting(Long meetingId, MeetingUpdateRequest request, Long userId) {
+    public MeetingResponse updateMeeting(Long meetingId, MeetingUpdateRequest request, Long authId) {
         // 1. 모임 조회
         Meeting meeting = meetingRepository.findById(meetingId)
             .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
 
         // 2. 권한 확인 (모임장만 수정 가능)
-        if (!meeting.isOwner(userId)) {
+        if (!meeting.isOwner(authId)) {
             throw new IllegalArgumentException("모임장만 모임 정보를 수정할 수 있습니다.");
         }
 
@@ -130,13 +130,13 @@ public class MeetingService {
     }
 
     @Transactional
-    public void deleteMeeting(Long meetingId, Long userId) {
+    public void deleteMeeting(Long meetingId, Long authId) {
         // 1. 모임 조회
         Meeting meeting = meetingRepository.findById(meetingId)
         .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
         
         // 2. 권한 확인 (모임장만 삭제 가능)
-        if (!meeting.isOwner(userId)) {
+        if (!meeting.isOwner(authId)) {
             throw new IllegalArgumentException("모임장만 모임을 삭제할 수 있습니다.");
         }
         
@@ -145,19 +145,19 @@ public class MeetingService {
     }
     
     @Transactional
-    public void leaveMeeting(Long meetingId, Long userId) {
+    public void leaveMeeting(Long meetingId, Long authId) {
         // 1. 모임 조회
         Meeting meeting = meetingRepository.findById(meetingId)
             .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
 
         // 2. 멤버 조회 및 유효성 검사
         Member member = meeting.getMembers().stream()
-            .filter(m -> m.getAuth().getId().equals(userId))
+            .filter(m -> m.getAuth().getId().equals(authId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("모임의 멤버가 아닙니다."));
 
         // 3. 모임장 탈퇴 제한
-        if (meeting.isOwner(userId)) {
+        if (meeting.isOwner(authId)) {
             throw new IllegalArgumentException("모임장은 탈퇴할 수 없습니다. 먼저 모임장 위임이 필요합니다.");
         }
 
@@ -165,11 +165,11 @@ public class MeetingService {
         member.setWithdrawn(true);
     }
     
-    public void kickMember(Long meetingId, Long targetUserId, Long userId) {
+    public void kickMember(Long meetingId, Long targetAuthId, Long authId) {
         // TODO: 모임 멤버 강제 퇴장 로직 구현
     }
     
-    public String getInvitationLink(Long meetingId, Long userId) {
+    public String getInvitationLink(Long meetingId, Long authId) {
         // TODO: 모임 초대 링크 조회 로직 구현
         return "";
     }
@@ -179,7 +179,7 @@ public class MeetingService {
         // TODO: 모임 가입 신청 로직 구현
     }
 
-    public InvitationResponse createInvitation(Long meetingId, Long userId) {
+    public InvitationResponse createInvitation(Long meetingId, Long authId) {
         // TODO: Implement logic
         return new InvitationResponse();
     }
@@ -206,7 +206,7 @@ public class MeetingService {
             .collect(Collectors.toList());
     }
 
-    public void delegateOwner(Long meetingId, Long currentOwnerId, Long newOwnerId) {
+    public void delegateOwner(Long meetingId, Long currentAuthId, Long newAuthId) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'delegateOwner'");
     }

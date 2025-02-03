@@ -13,16 +13,16 @@ import com.WinkProject.meeting.domain.Meeting;
 public interface MeetingRepository extends JpaRepository<Meeting, Long> {
     @Query("SELECT m FROM Meeting m " +
             "JOIN m.members mem " +
-            "WHERE mem.auth.id = :userId " +
+            "WHERE mem.auth.id = :authId " +
             "AND mem.isWithdrawn = false " +
             "ORDER BY m.startTime DESC " +
             "LIMIT :limit")
-    List<Meeting> findLatestMeetings(@Param("userId") Long userId, @Param("limit") int limit);
+    List<Meeting> findLatestMeetingsByAuthId(@Param("authId") Long authId, @Param("limit") int limit);
 
     @Query("SELECT DISTINCT m FROM Meeting m " +
             "JOIN FETCH m.members mem " +
-            "WHERE mem.auth.id = :userId " +
+            "WHERE mem.auth.id = :authId " +
             "AND mem.isWithdrawn = false " +
             "ORDER BY m.startTime DESC")
-    List<Meeting> findMeetingsByUserId(@Param("userId") Long userId);
+    List<Meeting> findMeetingsByAuthId(@Param("authId") Long authId);
 } 

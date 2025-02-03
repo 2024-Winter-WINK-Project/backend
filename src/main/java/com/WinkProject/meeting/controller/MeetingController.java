@@ -33,15 +33,15 @@ public class MeetingController {
         schema = @io.swagger.v3.oas.annotations.media.Schema(defaultValue = "5")
     )
     @Parameter(
-        name = "userId",
-        description = "사용자 ID (인증 기능 연동 후 제거 예정)",
+        name = "authId",
+        description = "Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
     @GetMapping("/latest")
     public ResponseEntity<List<MeetingBriefResponse>> getLatestMeetings(
             @RequestParam(defaultValue = "5") int limit,
-            @RequestParam Long userId) {
-        return ResponseEntity.ok(meetingService.getLatestMeetings(limit, userId));
+            @RequestParam Long authId) {
+        return ResponseEntity.ok(meetingService.getLatestMeetings(limit, authId));
     }
 
     @Operation(
@@ -50,13 +50,13 @@ public class MeetingController {
         tags = {"1. 모임 조회"}
     )
     @Parameter(
-        name = "userId", 
-        description = "사용자 ID (인증 기능 연동 후 제거 예정)",
+        name = "authId", 
+        description = "Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
     @GetMapping
-    public ResponseEntity<List<MeetingBriefResponse>> getMeetings(@RequestParam Long userId) {
-        return ResponseEntity.ok(meetingService.getMeetingsByUserId(userId));
+    public ResponseEntity<List<MeetingBriefResponse>> getMeetings(@RequestParam Long authId) {
+        return ResponseEntity.ok(meetingService.getMeetingsByAuthId(authId));
     }
 
     @Operation(
@@ -97,8 +97,8 @@ public class MeetingController {
         tags = {"2. 모임 생성/수정"}
     )
     @Parameter(
-        name = "userId",
-        description = "사용자 ID (인증 기능 연동 후 제거 예정)",
+        name = "authId",
+        description = "Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
     @Parameter(
@@ -113,9 +113,9 @@ public class MeetingController {
     @PostMapping
     public ResponseEntity<MeetingResponse> createMeeting(
             @RequestBody MeetingCreateRequest request,
-            @RequestParam Long userId,
+            @RequestParam Long authId,
             @RequestParam String nickname) {
-        return ResponseEntity.ok(meetingService.createMeeting(request, userId, nickname));
+        return ResponseEntity.ok(meetingService.createMeeting(request, authId, nickname));
     }
 
     @Operation(
@@ -129,8 +129,8 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "userId",
-        description = "사용자 ID (인증 기능 연동 후 제거 예정)",
+        name = "authId",
+        description = "Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -141,8 +141,8 @@ public class MeetingController {
     public ResponseEntity<MeetingResponse> updateMeeting(
             @PathVariable Long meetingId,
             @RequestBody MeetingUpdateRequest request,
-            @RequestParam Long userId) {
-        return ResponseEntity.ok(meetingService.updateMeeting(meetingId, request, userId));
+            @RequestParam Long authId) {
+        return ResponseEntity.ok(meetingService.updateMeeting(meetingId, request, authId));
     }
 
     @Operation(
@@ -156,15 +156,15 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "userId", 
-        description = "사용자 ID (인증 기능 연동 후 제거 예정)",
+        name = "authId", 
+        description = "Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
     @DeleteMapping("/{meetingId}")
     public ResponseEntity<Void> deleteMeeting(
             @PathVariable Long meetingId,
-            @RequestParam Long userId) {
-        meetingService.deleteMeeting(meetingId, userId);
+            @RequestParam Long authId) {
+        meetingService.deleteMeeting(meetingId, authId);
         return ResponseEntity.ok().build();
     }
 
@@ -179,21 +179,21 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "userId",
-        description = "현재 모임장 ID (인증 기능 연동 후 제거 예정)",
+        name = "authId",
+        description = "현재 모임장 Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
     @Parameter(
-        name = "newLeaderId",
-        description = "새로운 모임장이 될 멤버 ID",
+        name = "newLeaderAuthId",
+        description = "새로운 모임장이 될 멤버의 Auth ID",
         required = true
     )
     @PostMapping("/{meetingId}/delegate")
     public ResponseEntity<Void> delegateOwner(
             @PathVariable Long meetingId,
-            @RequestParam Long userId,
-            @RequestParam Long newLeaderId) {
-        meetingService.delegateOwner(meetingId, userId, newLeaderId);
+            @RequestParam Long authId,
+            @RequestParam Long newLeaderAuthId) {
+        meetingService.delegateOwner(meetingId, authId, newLeaderAuthId);
         return ResponseEntity.ok().build();
     }
 
@@ -208,15 +208,15 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "userId",
-        description = "사용자 ID (인증 기능 연동 후 제거 예정)", 
+        name = "authId",
+        description = "Auth ID (인증 기능 연동 후 제거 예정)", 
         required = true
     )
     @DeleteMapping("/{meetingId}/members")
     public ResponseEntity<Void> leaveMeeting(
             @PathVariable Long meetingId,
-            @RequestParam Long userId) {
-        meetingService.leaveMeeting(meetingId, userId);
+            @RequestParam Long authId) {
+        meetingService.leaveMeeting(meetingId, authId);
         return ResponseEntity.ok().build();
     }
 
@@ -231,21 +231,21 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "targetUserId",
-        description = "퇴장시킬 사용자 ID",
+        name = "targetAuthId",
+        description = "퇴장시킬 사용자의 Auth ID",
         required = true
     )
     @Parameter(
-        name = "userId",
-        description = "요청하는 사용자 ID (인증 기능 연동 후 제거 예정)",
+        name = "authId",
+        description = "요청하는 사용자의 Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
-    @DeleteMapping("/{meetingId}/members/{targetUserId}")
+    @DeleteMapping("/{meetingId}/members/{targetAuthId}")
     public ResponseEntity<Void> kickMember(
             @PathVariable Long meetingId,
-            @PathVariable Long targetUserId,
-            @RequestParam Long userId) {
-        meetingService.kickMember(meetingId, targetUserId, userId);
+            @PathVariable Long targetAuthId,
+            @RequestParam Long authId) {
+        meetingService.kickMember(meetingId, targetAuthId, authId);
         return ResponseEntity.ok().build();
     }
 
@@ -261,15 +261,15 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "userId",
-        description = "사용자 ID (인증 기능 연동 후 제거 예정)", 
+        name = "authId",
+        description = "Auth ID (인증 기능 연동 후 제거 예정)", 
         required = true
     )
     @PostMapping("/{meetingId}/invitations")
     public ResponseEntity<InvitationResponse> createInvitation(
             @PathVariable Long meetingId,
-            @RequestParam Long userId) {
-        return ResponseEntity.ok(meetingService.createInvitation(meetingId, userId));
+            @RequestParam Long authId) {
+        return ResponseEntity.ok(meetingService.createInvitation(meetingId, authId));
     }
 
     @Operation(
@@ -283,15 +283,15 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "userId",
-        description = "사용자 ID (인증 기능 연동 후 제거 예정)",
+        name = "authId",
+        description = "Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
     @GetMapping("/{meetingId}/invitations")
     public ResponseEntity<String> getInvitationLink(
             @PathVariable Long meetingId,
-            @RequestParam Long userId) {
-        return ResponseEntity.ok(meetingService.getInvitationLink(meetingId, userId));
+            @RequestParam Long authId) {
+        return ResponseEntity.ok(meetingService.getInvitationLink(meetingId, authId));
     }
 
     @Operation(
