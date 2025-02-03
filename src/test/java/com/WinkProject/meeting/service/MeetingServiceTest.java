@@ -739,4 +739,135 @@ class MeetingServiceTest {
             verify(meetingRepository).findById(1L);
         }
     }
+
+    @Nested
+    @DisplayName("모임 멤버 강제 퇴장 테스트")
+    class KickMemberTest {
+        private Meeting testMeeting;
+        private Member ownerMember;
+        private Member normalMember;
+        private Member withdrawnMember;
+        private Long ownerAuthId = 1L;
+        private Long normalAuthId = 2L;
+        private Long withdrawnAuthId = 3L;
+
+        @BeforeEach
+        void setUp() {
+            // 모임 설정
+            testMeeting = new Meeting();
+            testMeeting.setId(1L);
+            testMeeting.setOwnerId(ownerAuthId);
+
+            // 모임장 설정
+            Auth ownerAuth = new Auth();
+            ownerAuth.setId(ownerAuthId);
+            ownerMember = Member.createMember(testMeeting, ownerAuth, "모임장");
+            testMeeting.getMembers().add(ownerMember);
+
+            // 일반 멤버 설정
+            Auth normalAuth = new Auth();
+            normalAuth.setId(normalAuthId);
+            normalMember = Member.createMember(testMeeting, normalAuth, "일반 멤버");
+            testMeeting.getMembers().add(normalMember);
+
+            // 탈퇴한 멤버 설정
+            Auth withdrawnAuth = new Auth();
+            withdrawnAuth.setId(withdrawnAuthId);
+            withdrawnMember = Member.createMember(testMeeting, withdrawnAuth, "탈퇴한 멤버");
+            withdrawnMember.setWithdrawn(true);
+            testMeeting.getMembers().add(withdrawnMember);
+        }
+
+        @Test
+        @DisplayName("모임장이 일반 멤버를 정상적으로 강제 퇴장")
+        void kickMemberSuccess() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+
+            // when
+            meetingService.kickMember(1L, normalAuthId, ownerAuthId);
+
+            // then
+            assertThat(normalMember.isWithdrawn()).isTrue();
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository).save(testMeeting);
+        }
+
+        @Test
+        @DisplayName("모임장이 아닌 사용자가 강제 퇴장 시도")
+        void kickMemberByNonOwnerFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.kickMember(1L, withdrawnAuthId, normalAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임장만 멤버를 강제 퇴장시킬 수 있습니다.");
+
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("모임에 속하지 않은 멤버 강제 퇴장 시도")
+        void kickNonMemberFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            Long nonMemberAuthId = 999L;
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.kickMember(1L, nonMemberAuthId, ownerAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("퇴장시킬 멤버가 모임에 속해있지 않습니다.");
+
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("이미 탈퇴한 멤버 강제 퇴장 시도")
+        void kickWithdrawnMemberFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.kickMember(1L, withdrawnAuthId, ownerAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이미 탈퇴한 멤버입니다.");
+
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("모임장 강제 퇴장 시도")
+        void kickOwnerFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.kickMember(1L, ownerAuthId, ownerAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임장은 강제 퇴장시킬 수 없습니다.");
+
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 모임에서 강제 퇴장 시도")
+        void kickMemberFromNonExistentMeetingFail() {
+            // given
+            when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.kickMember(999L, normalAuthId, ownerAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임을 찾을 수 없습니다.");
+
+            verify(meetingRepository).findById(999L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+    }
 } 

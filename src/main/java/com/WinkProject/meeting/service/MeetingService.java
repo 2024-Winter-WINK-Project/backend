@@ -165,8 +165,36 @@ public class MeetingService {
         member.setWithdrawn(true);
     }
     
+    @Transactional
     public void kickMember(Long meetingId, Long targetAuthId, Long authId) {
-        // TODO: 모임 멤버 강제 퇴장 로직 구현
+        // 1. 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        // 2. 현재 사용자가 모임장인지 확인
+        if (!meeting.isOwner(authId)) {
+            throw new IllegalArgumentException("모임장만 멤버를 강제 퇴장시킬 수 있습니다.");
+        }
+
+        // 3. 강제 퇴장할 멤버가 모임의 멤버인지 확인
+        Member targetMember = meeting.getMembers().stream()
+            .filter(m -> m.getAuth().getId().equals(targetAuthId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("퇴장시킬 멤버가 모임에 속해있지 않습니다."));
+
+        // 4. 이미 탈퇴한 멤버인지 확인
+        if (targetMember.isWithdrawn()) {
+            throw new IllegalArgumentException("이미 탈퇴한 멤버입니다.");
+        }
+
+        // 5. 모임장을 강제 퇴장시키려는 경우 방지
+        if (meeting.isOwner(targetAuthId)) {
+            throw new IllegalArgumentException("모임장은 강제 퇴장시킬 수 없습니다.");
+        }
+
+        // 6. 강제 퇴장 처리
+        targetMember.setWithdrawn(true);
+        meetingRepository.save(meeting);
     }
     
     public String getInvitationLink(Long meetingId, Long authId) {
