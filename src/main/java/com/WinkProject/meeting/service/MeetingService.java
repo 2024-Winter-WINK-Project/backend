@@ -206,9 +206,31 @@ public class MeetingService {
             .collect(Collectors.toList());
     }
 
+    @Transactional
     public void delegateOwner(Long meetingId, Long currentAuthId, Long newAuthId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delegateOwner'");
+        // 1. 모임 조회
+        Meeting meeting = meetingRepository.findById(meetingId)
+            .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
+
+        // 2. 현재 사용자가 모임장인지 확인
+        if (!meeting.isOwner(currentAuthId)) {
+            throw new IllegalArgumentException("모임장만 권한을 위임할 수 있습니다.");
+        }
+
+        // 3. 새로운 모임장이 될 멤버가 모임의 멤버인지 확인
+        Member newOwner = meeting.getMembers().stream()
+            .filter(m -> m.getAuth().getId().equals(newAuthId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("위임할 멤버가 모임에 속해있지 않습니다."));
+
+        // 4. 새로운 모임장이 탈퇴한 멤버인지 확인
+        if (newOwner.isWithdrawn()) {
+            throw new IllegalArgumentException("탈퇴한 멤버에게 모임장을 위임할 수 없습니다.");
+        }
+
+        // 5. 모임장 권한 위임
+        meeting.setOwnerId(newAuthId);
+        meetingRepository.save(meeting);
     }
 
     public MeetingResponse getMeetingDetail(Long meetingId) {

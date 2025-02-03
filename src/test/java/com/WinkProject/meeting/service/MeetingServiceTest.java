@@ -486,4 +486,120 @@ class MeetingServiceTest {
             verify(meetingRepository).findById(999L);
         }
     }
+
+    @Nested
+    @DisplayName("모임장 위임 테스트")
+    class DelegateOwnerTest {
+        private Meeting testMeeting;
+        private Member ownerMember;
+        private Member normalMember;
+        private Member withdrawnMember;
+        private Long ownerAuthId = 1L;
+        private Long normalAuthId = 2L;
+        private Long withdrawnAuthId = 3L;
+
+        @BeforeEach
+        void setUp() {
+            // 모임 설정
+            testMeeting = new Meeting();
+            testMeeting.setId(1L);
+            testMeeting.setOwnerId(ownerAuthId);
+
+            // 모임장 설정
+            Auth ownerAuth = new Auth();
+            ownerAuth.setId(ownerAuthId);
+            ownerMember = Member.createMember(testMeeting, ownerAuth, "모임장");
+            testMeeting.getMembers().add(ownerMember);
+
+            // 일반 멤버 설정
+            Auth normalAuth = new Auth();
+            normalAuth.setId(normalAuthId);
+            normalMember = Member.createMember(testMeeting, normalAuth, "일반 멤버");
+            testMeeting.getMembers().add(normalMember);
+
+            // 탈퇴한 멤버 설정
+            Auth withdrawnAuth = new Auth();
+            withdrawnAuth.setId(withdrawnAuthId);
+            withdrawnMember = Member.createMember(testMeeting, withdrawnAuth, "탈퇴한 멤버");
+            withdrawnMember.setWithdrawn(true);
+            testMeeting.getMembers().add(withdrawnMember);
+        }
+
+        @Test
+        @DisplayName("모임장 권한 정상 위임")
+        void delegateOwnerSuccess() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            when(meetingRepository.save(any(Meeting.class))).thenReturn(testMeeting);
+
+            // when
+            meetingService.delegateOwner(1L, ownerAuthId, normalAuthId);
+
+            // then
+            assertThat(testMeeting.getOwnerId()).isEqualTo(normalAuthId);
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository).save(testMeeting);
+        }
+
+        @Test
+        @DisplayName("모임장이 아닌 사용자가 위임 시도")
+        void delegateOwnerByNonOwnerFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.delegateOwner(1L, normalAuthId, withdrawnAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임장만 권한을 위임할 수 있습니다.");
+
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("모임에 속하지 않은 멤버에게 위임 시도")
+        void delegateOwnerToNonMemberFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            Long nonMemberAuthId = 999L;
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.delegateOwner(1L, ownerAuthId, nonMemberAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("위임할 멤버가 모임에 속해있지 않습니다.");
+
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("탈퇴한 멤버에게 위임 시도")
+        void delegateOwnerToWithdrawnMemberFail() {
+            // given
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.delegateOwner(1L, ownerAuthId, withdrawnAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("탈퇴한 멤버에게 모임장을 위임할 수 없습니다.");
+
+            verify(meetingRepository).findById(1L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 모임의 모임장 위임 시도")
+        void delegateOwnerNonExistentMeetingFail() {
+            // given
+            when(meetingRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> meetingService.delegateOwner(999L, ownerAuthId, normalAuthId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("모임을 찾을 수 없습니다.");
+
+            verify(meetingRepository).findById(999L);
+            verify(meetingRepository, never()).save(any(Meeting.class));
+        }
+    }
 } 
