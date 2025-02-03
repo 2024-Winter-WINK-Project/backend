@@ -16,6 +16,10 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
 
     Optional<Invitation> findByMeetingIdAndInviteCode(Long meetingId, String inviteCode);
 
+    Optional<Invitation> findByInviteCode(String inviteCode);
+
+    Optional<Invitation> findByMeetingId(Long meetingId);
+
     @Modifying
     @Query("DELETE FROM Invitation i WHERE i.expiresAt < :now")
     void deleteAllExpired(@Param("now") LocalDateTime now);
