@@ -22,7 +22,7 @@ public class Budget {
     
     private Long totalAmount;
     
-    @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<BudgetDetail> details = new ArrayList<>();
 
     private String kakaoRemitLink;
