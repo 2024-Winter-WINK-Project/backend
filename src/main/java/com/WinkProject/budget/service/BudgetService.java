@@ -114,7 +114,7 @@ public class BudgetService {
 
     public AdjustmentResponse getInfo(Long groupId){
         Meeting meeting = meetingRepository.findById(groupId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Meeting not found"));
-        List<Long> member = meeting.getMembers().stream().map(Member::getMemberId).toList();
+        List<Long> member = meeting.getMembers().stream().map(Member::getId).toList();
 
         Budget budget = budgetRepository.findByMeetingId(groupId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Budget not found"));
 
