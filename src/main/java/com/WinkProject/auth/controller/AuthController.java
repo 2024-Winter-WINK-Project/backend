@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @Controller
-//@RequestMapping("/auth") TODO 마지막 testurl 없애기
+
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
@@ -33,18 +33,7 @@ public class AuthController {
     @Value("${spring.security.oauth2.client.registration.kakao.redirect_uri}")
     private String redirectUri;
 
-    @GetMapping("/")
-    @ResponseBody
-    public String test(){
-        return "test";
-    }
-
     @GetMapping("/auth/kakao/login")
-    public String loginPage(){
-        String location = "https://kauth.kakao.com/oauth/authorize?response_type=code&client_id="+clientId+"&redirect_uri="+redirectUri;
-        return "redirect:" + location;
-    }
-    @GetMapping("/auth/callback") //TODO 나중에 /kakao/login 로 변경 후 프론트에서 인가 코드만 받아오기
     @ResponseBody
     public ResponseEntity<UserInfoResponse> callback(@RequestParam("code") String code, HttpServletRequest request, HttpServletResponse response)  {
         String accessToken = authService.getAccessToken(code);
