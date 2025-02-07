@@ -40,3 +40,6 @@ out/
 # Application properties
 src/main/resources/application.yml
 src/test/resources/application-test.yml
+
+# schema.sql
+src/main/resources/schema.sql
