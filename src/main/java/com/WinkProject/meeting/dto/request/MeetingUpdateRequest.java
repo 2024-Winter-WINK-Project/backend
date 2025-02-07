@@ -5,15 +5,17 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Getter @Setter
+@Getter
+@Setter
 public class MeetingUpdateRequest {
     private String name;
     private String description;
     private PlaceRequest place;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    
-    @Getter @Setter
+
+    @Getter
+    @Setter
     public static class PlaceRequest {
         private String name;
         private String address;
