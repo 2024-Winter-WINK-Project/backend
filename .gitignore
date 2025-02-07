@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+.DS_Store
+
+# Application properties
+src/main/resources/application.yml
+src/test/resources/application-test.yml

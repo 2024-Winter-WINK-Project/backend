@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/winkproject
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5432/{database_name}
+    username: {username}
+    password: {password}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -17,12 +17,12 @@ spring:
       client:
         registration:
           kakao:
-            client-id: MvvN2JWVkz6iXqdd0ON9nITywmqx0SKQ
-            redirect_uri: http://localhost:8080/auth/callback
+            client-id: {your-kakao-client-id}
+            redirect_uri: {your-redirect-uri}
   jwt:
-    secret: dSJjrMGIIS57olGcpZOjwGkAXcqrXdM4
+    secret: {your-jwt-secret-key}
 
 springdoc:
   swagger-ui:
     operations-sorter: default
-    tags-sorter: alpha
+    tags-sorter: alpha 
