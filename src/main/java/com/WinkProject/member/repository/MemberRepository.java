@@ -18,4 +18,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByAuthId(Long authId);
 
     boolean existsByMeetingIdAndNicknameAndIsWithdrawnFalse(Long meetingId, String nickname);
+    
+    @Query("SELECT CASE WHEN COUNT(m) > 0 THEN true ELSE false END FROM Member m WHERE m.auth.socialId = :socialId")
+    boolean existsBySocialId(Long socialId);
 } 

@@ -6,9 +6,11 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Settlement {
@@ -26,6 +28,11 @@ public class Settlement {
     private String tossPayString;
     @Nullable
     private String accountNumber;
+
+    public Settlement(Meeting meeting) {
+        this.meeting = meeting;
+        this.meetingId = meeting.getId();
+    }
 
     public static Settlement from(SettlementRequest request, Meeting meeting) {
         return new Settlement(

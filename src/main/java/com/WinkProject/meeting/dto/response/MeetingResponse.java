@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.WinkProject.meeting.domain.Meeting;
 import com.WinkProject.member.domain.Member;
-import com.WinkProject.member.domain.MemberRole;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -79,7 +78,7 @@ public class MeetingResponse {
         }
 
         Member owner = meeting.getMembers().stream()
-                .filter(m -> m.getId().equals(meeting.getOwnerId()))
+                .filter(m -> m.getAuth().getId().equals(meeting.getOwnerId()))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("모임장을 찾을 수 없습니다."));
 
@@ -90,6 +89,7 @@ public class MeetingResponse {
         response.setOwner(ownerResponse);
 
         List<MemberResponse> memberResponses = meeting.getMembers().stream()
+                .filter(member -> !member.isWithdrawn())
                 .map(member -> {
                     MemberResponse memberResponse = new MemberResponse();
                     memberResponse.setId(member.getId());

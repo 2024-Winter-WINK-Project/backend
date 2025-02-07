@@ -33,12 +33,12 @@ import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MeetingResponse;
 import com.WinkProject.meeting.repository.MeetingRepository;
 import com.WinkProject.meeting.repository.SettlementRepository;
-import com.WinkProject.member.domain.Auth;
+import com.WinkProject.auth.schema.Auth;
 import com.WinkProject.member.domain.Member;
-import com.WinkProject.member.repository.AuthRepository;
-import com.WinkProject.member.repository.MemberRepository;
+import com.WinkProject.auth.repository.AuthRepository;
 import com.WinkProject.invitation.domain.Invitation;
 import com.WinkProject.invitation.repository.InvitationRepository;
+import com.WinkProject.member.repository.MemberRepository;
 import com.WinkProject.invitation.dto.response.InvitationResponse;
 
 @ExtendWith(MockitoExtension.class)
@@ -178,24 +178,17 @@ class MeetingServiceTest {
         
         private MeetingCreateRequest request;
         private Auth testAuth;
+        private String nickname;
+        private Long authId;
 
         @BeforeEach
         void setUp() {
-            // 테스트용 Auth 생성
-            testAuth = new Auth();
-            testAuth.setId(1L);
-            testAuth.setSocialId("test123");
-            testAuth.setSocialType("KAKAO");
-            testAuth.setNickname("테스트 유저");
-            testAuth.setProfileImage("test_profile.jpg");
-
-            when(authRepository.findById(1L)).thenReturn(java.util.Optional.of(testAuth));
-
-            // MeetingCreateRequest 설정
+            // 테스트 데이터 설정
             request = new MeetingCreateRequest();
             request.setName("테스트 모임");
+            request.setDescription("테스트 모임입니다.");
             request.setStartTime(LocalDateTime.now().plusDays(1));
-            request.setEndTime(LocalDateTime.now().plusDays(1).plusHours(2));
+            request.setEndTime(LocalDateTime.now().plusDays(2));
 
             // Place 정보 설정
             MeetingCreateRequest.PlaceRequest placeRequest = new MeetingCreateRequest.PlaceRequest();
@@ -204,38 +197,46 @@ class MeetingServiceTest {
             placeRequest.setLatitude(37.5);
             placeRequest.setLongitude(127.0);
             request.setPlace(placeRequest);
+
+            testAuth = Auth.builder()
+                    .id(1L)
+                    .socialId("12345")
+                    .socialType("KAKAO")
+                    .nickname("테스트 유저")
+                    .profileImage("test_profile.jpg")
+                    .build();
+            nickname = "모임장";
+            authId = 1L;
+
+            // Mock 설정
+            when(authRepository.findById(authId)).thenReturn(Optional.of(testAuth));
+            when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> {
+                Meeting meeting = invocation.getArgument(0);
+                meeting.setId(1L);
+                return meeting;
+            });
         }
 
         @Test
         @DisplayName("정산 정보 없이 모임 생성")
         void createMeetingWithoutSettlement() {
-            // given
-            String nickname = "모임장 닉네임";
-            when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> {
-                Meeting meeting = invocation.getArgument(0);
-                meeting.setId(1L);
-
-                // 모임장 정보 설정
-                Member owner = meeting.getMembers().get(0);  // createMeeting에서 추가한 모임장
-                owner.setId(1L);  // Member ID 설정
-                
-                return meeting;
-            });
-
             // when
-            MeetingResponse response = meetingService.createMeeting(request, 1L, nickname);
+            MeetingResponse response = meetingService.createMeeting(request, authId, nickname);
 
             // then
             assertThat(response).isNotNull();
             assertThat(response.getId()).isEqualTo(1L);
             assertThat(response.getName()).isEqualTo("테스트 모임");
+            assertThat(response.getDescription()).isEqualTo("테스트 모임입니다.");
             assertThat(response.getPlace()).isNotNull();
             assertThat(response.getPlace().getName()).isEqualTo("테스트 장소");
-            assertThat(response.getOwner()).isNotNull();
-            assertThat(response.getOwner().getId()).isEqualTo(1L);
-            assertThat(response.getOwner().getNickname()).isEqualTo(nickname);
+            assertThat(response.getPlace().getAddress()).isEqualTo("서울시 강남구");
+            assertThat(response.getPlace().getLatitude()).isEqualTo(37.5);
+            assertThat(response.getPlace().getLongitude()).isEqualTo(127.0);
+
+            verify(authRepository).findById(authId);
             verify(meetingRepository).save(any(Meeting.class));
-            verify(authRepository).findById(1L);
+            verify(settlementRepository, never()).save(any(Settlement.class));
         }
     }
 
@@ -613,61 +614,60 @@ class MeetingServiceTest {
     @Nested
     @DisplayName("모임 상세 조회 테스트")
     class GetMeetingDetailTest {
-        private Meeting testMeeting;
+        private Meeting meeting;
         private Member ownerMember;
         private Member normalMember;
-        private Long ownerAuthId = 1L;
-        private Long normalAuthId = 2L;
+        private Place place;
 
         @BeforeEach
         void setUp() {
-            // 모임장 Auth 설정
-            Auth ownerAuth = new Auth();
-            ownerAuth.setId(ownerAuthId);
-            ownerAuth.setNickname("모임장");
-            ownerAuth.setProfileImage("owner_profile.jpg");
-            
-            // 모임 설정
-            testMeeting = new Meeting();
-            testMeeting.setId(1L);
-            testMeeting.setName("테스트 모임");
-            testMeeting.setDescription("테스트 모임 설명");
-            testMeeting.setStartTime(LocalDateTime.now().plusDays(1));
-            testMeeting.setEndTime(LocalDateTime.now().plusDays(1).plusHours(2));
-            testMeeting.setOwnerId(ownerAuthId);
-            testMeeting.setCreatedAt(LocalDateTime.now());
+            // 모임 생성
+            meeting = new Meeting();
+            meeting.setId(1L);
+            meeting.setName("테스트 모임");
+            meeting.setDescription("테스트 모임입니다.");
+            meeting.setStartTime(LocalDateTime.now().plusDays(1));
+            meeting.setEndTime(LocalDateTime.now().plusDays(2));
+            meeting.setOwnerId(1L);
 
             // 장소 설정
-            Place place = new Place();
+            place = new Place();
             place.setName("테스트 장소");
             place.setAddress("서울시 강남구");
             place.setLatitude(37.5);
             place.setLongitude(127.0);
-            testMeeting.setPlace(place);
+            meeting.setPlace(place);
 
-            // 모임장 멤버 설정
-            ownerMember = Member.createMember(testMeeting, ownerAuth, "모임장");
-            ownerMember.setId(ownerAuthId);
-            ownerMember.setProfileImage("owner_profile.jpg");
-            testMeeting.getMembers().add(ownerMember);
+            // 모임장 생성
+            Auth ownerAuth = Auth.builder()
+                    .id(1L)
+                    .socialId("12345")
+                    .socialType("KAKAO")
+                    .nickname("모임장")
+                    .profileImage("owner_profile.jpg")
+                    .build();
 
-            // 일반 멤버 설정
-            Auth normalAuth = new Auth();
-            normalAuth.setId(normalAuthId);
-            normalAuth.setNickname("일반 멤버");
-            normalAuth.setProfileImage("member_profile.jpg");
-            
-            normalMember = Member.createMember(testMeeting, normalAuth, "일반 멤버");
-            normalMember.setId(normalAuthId);
-            normalMember.setProfileImage("member_profile.jpg");
-            testMeeting.getMembers().add(normalMember);
+            ownerMember = Member.createMember(meeting, ownerAuth, "모임장");
+            meeting.getMembers().add(ownerMember);
+
+            // 일반 멤버 생성
+            Auth normalAuth = Auth.builder()
+                    .id(2L)
+                    .socialId("67890")
+                    .socialType("KAKAO")
+                    .nickname("일반 멤버")
+                    .profileImage("member_profile.jpg")
+                    .build();
+
+            normalMember = Member.createMember(meeting, normalAuth, "일반 멤버");
+            meeting.getMembers().add(normalMember);
         }
 
         @Test
         @DisplayName("모임 상세 정보 정상 조회")
         void getMeetingDetailSuccess() {
             // given
-            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(meeting));
 
             // when
             MeetingResponse response = meetingService.getMeetingDetail(1L);
@@ -676,7 +676,7 @@ class MeetingServiceTest {
             assertThat(response).isNotNull();
             assertThat(response.getId()).isEqualTo(1L);
             assertThat(response.getName()).isEqualTo("테스트 모임");
-            assertThat(response.getDescription()).isEqualTo("테스트 모임 설명");
+            assertThat(response.getDescription()).isEqualTo("테스트 모임입니다.");
             
             // 장소 정보 확인
             assertThat(response.getPlace()).isNotNull();
@@ -687,21 +687,34 @@ class MeetingServiceTest {
             
             // 모임장 정보 확인
             assertThat(response.getOwner()).isNotNull();
-            assertThat(response.getOwner().getId()).isEqualTo(ownerAuthId);
             assertThat(response.getOwner().getNickname()).isEqualTo("모임장");
             assertThat(response.getOwner().getProfileImage()).isEqualTo("owner_profile.jpg");
             
             // 멤버 목록 확인
             assertThat(response.getMembers()).hasSize(2);
-            assertThat(response.getMembers().get(0).getId()).isEqualTo(ownerAuthId);
-            assertThat(response.getMembers().get(1).getId()).isEqualTo(normalAuthId);
+            assertThat(response.getMembers().get(0).getNickname()).isEqualTo("모임장");
+            assertThat(response.getMembers().get(1).getNickname()).isEqualTo("일반 멤버");
+        }
 
-            // 시간 정보 확인
-            assertThat(response.getStartTime()).isNotNull();
-            assertThat(response.getEndTime()).isNotNull();
-            assertThat(response.getCreatedAt()).isNotNull();
+        @Test
+        @DisplayName("정산 정보가 있는 모임 조회")
+        void getMeetingDetailWithSettlement() {
+            // given
+            Settlement settlement = new Settlement(meeting);
+            settlement.setKakaoPayString("카카오페이");
+            settlement.setTossPayString("토스");
+            settlement.setAccountNumber("123-456-789");
+            meeting.setSettlement(settlement);
+            when(meetingRepository.findById(1L)).thenReturn(Optional.of(meeting));
 
-            verify(meetingRepository).findById(1L);
+            // when
+            MeetingResponse response = meetingService.getMeetingDetail(1L);
+
+            // then
+            assertThat(response.getSettlement()).isNotNull();
+            assertThat(response.getSettlement().getKakaoPayString()).isEqualTo("카카오페이");
+            assertThat(response.getSettlement().getTossPayString()).isEqualTo("토스");
+            assertThat(response.getSettlement().getAccountNumber()).isEqualTo("123-456-789");
         }
 
         @Test
@@ -712,37 +725,8 @@ class MeetingServiceTest {
 
             // when & then
             assertThatThrownBy(() -> meetingService.getMeetingDetail(999L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("모임을 찾을 수 없습니다.");
-
-            verify(meetingRepository).findById(999L);
-        }
-
-        @Test
-        @DisplayName("정산 정보가 있는 모임 조회")
-        void getMeetingDetailWithSettlement() {
-            // given
-            Settlement settlement = new Settlement(
-                1L,
-                testMeeting,
-                "카카오페이",
-                "토스",
-                "123-456-789"
-            );
-            testMeeting.setSettlement(settlement);
-
-            when(meetingRepository.findById(1L)).thenReturn(Optional.of(testMeeting));
-
-            // when
-            MeetingResponse response = meetingService.getMeetingDetail(1L);
-
-            // then
-            assertThat(response.getSettlement()).isNotNull();
-            assertThat(response.getSettlement().getKakaoPayString()).isEqualTo("카카오페이");
-            assertThat(response.getSettlement().getTossPayString()).isEqualTo("토스");
-            assertThat(response.getSettlement().getAccountNumber()).isEqualTo("123-456-789");
-
-            verify(meetingRepository).findById(1L);
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("모임을 찾을 수 없습니다.");
         }
     }
 

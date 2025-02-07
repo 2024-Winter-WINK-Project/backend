@@ -1,9 +1,10 @@
 package com.WinkProject.member.domain;
 
 import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.auth.schema.Auth;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -18,31 +19,35 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "회원")
+@Table(name = "멤버")
 public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "meetingId")
+    @ManyToOne
+    @JoinColumn(name = "meeting_id")
     private Meeting meeting;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "authId")
+    @ManyToOne
+    @JoinColumn(name = "auth_id")
     private Auth auth;
 
+    @Column(nullable = false)
     private String nickname;
-    private String profileImage;
-    private boolean isWithdrawn;
+
+    @Column(nullable = false)
+    private boolean isWithdrawn = false;
+
+    public String getProfileImage() {
+        return auth != null ? auth.getProfileImage() : null;
+    }
 
     public static Member createMember(Meeting meeting, Auth auth, String nickname) {
         Member member = new Member();
         member.setMeeting(meeting);
         member.setAuth(auth);
         member.setNickname(nickname);
-        member.setProfileImage(auth.getProfileImage());
-        member.setWithdrawn(false);
         return member;
     }
 } 

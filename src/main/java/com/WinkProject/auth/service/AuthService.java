@@ -65,11 +65,9 @@ public class AuthService {
                 .bodyToMono(KakaoUserInfoResponse.class)
                 .block();
 
-
         return kakaoUserInfoResponse;
-
-
     }
+
     public void kakaoLogOut(String accessToken){
         WebClient.create(KAUTH_USER_URL_HOST).post()
                 .uri(uriBuilder -> uriBuilder
@@ -82,19 +80,33 @@ public class AuthService {
                 .block();
     }
 
-    public UserInfoResponse saveAuth(Long userId,String nickName, String profileUrl){
+    public UserInfoResponse saveAuth(Long userId, String nickName, String profileUrl){
         Auth existAuth = authRepository.findById(userId).orElse(null);
         if(existAuth == null){
-            Auth auth = Auth.builder().socialId(userId).nickName(nickName).profileUrl(profileUrl).build();
+            Auth auth = Auth.builder()
+                    .socialId(String.valueOf(userId))
+                    .socialType("KAKAO")
+                    .nickname(nickName)
+                    .profileImage(profileUrl)
+                    .build();
             authRepository.save(auth);
-            return UserInfoResponse.builder().loginState("REGISTER").memberId(userId).nickName(nickName).profileUrl(profileUrl).build();
+            return UserInfoResponse.builder()
+                    .loginState("REGISTER")
+                    .memberId(userId)
+                    .nickName(nickName)
+                    .profileUrl(profileUrl)
+                    .build();
         }
         else{
-            return UserInfoResponse.builder().loginState("EXIST").memberId(userId).nickName(nickName).profileUrl(profileUrl).build();
+            return UserInfoResponse.builder()
+                    .loginState("EXIST")
+                    .memberId(userId)
+                    .nickName(nickName)
+                    .profileUrl(profileUrl)
+                    .build();
         }
-
-
     }
+
     public boolean deleteAuth(Long userId){
         Optional<Auth> existAuth = authRepository.findById(userId);
         if (existAuth.isPresent() && existAuth.get().getMembers().isEmpty()){ //TODO 회원 탈퇴 거절 케이스 나누기
@@ -118,14 +130,12 @@ public class AuthService {
         session.invalidate();
 
         Cookie cookie = new Cookie("jwt",null);
-        cookie.setHttpOnly(true); // 생성 시와 동일하게 설정
-        cookie.setSecure(true); // 생성 시와 동일하게 설정
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setMaxAge(0);
         response.addCookie(cookie);
         log.info("쿠키 삭제 완료");
         return true;
-
     }
-
 }

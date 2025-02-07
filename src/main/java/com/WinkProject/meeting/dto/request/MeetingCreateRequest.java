@@ -12,6 +12,7 @@ import lombok.Setter;
 @Setter
 public class MeetingCreateRequest {
     private String name;
+    private String description;
     private PlaceRequest place;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -37,15 +38,18 @@ public class MeetingCreateRequest {
     public Meeting toEntity() {
         Meeting meeting = new Meeting();
         meeting.setName(this.name);
+        meeting.setDescription(this.description);
         meeting.setStartTime(this.startTime);
         meeting.setEndTime(this.endTime);
 
-        Place place = new Place();
-        place.setName(this.place.name);
-        place.setAddress(this.place.address);
-        place.setLatitude(this.place.latitude);
-        place.setLongitude(this.place.longitude);
-        meeting.setPlace(place);
+        if (this.place != null) {
+            Place place = new Place();
+            place.setName(this.place.name);
+            place.setAddress(this.place.address);
+            place.setLatitude(this.place.latitude);
+            place.setLongitude(this.place.longitude);
+            meeting.setPlace(place);
+        }
 
         return meeting;
     }
