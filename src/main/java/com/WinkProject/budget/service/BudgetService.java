@@ -122,7 +122,6 @@ public class BudgetService {
                 .accountNumber(budget.getAccountNumber())
                 .tossUrl(budget.getTossRemitLink())
                 .kakaoUrl(budget.getKakaoRemitLink())
-                .groupId(groupId)
                 .memberID(member)
                 .build();
 

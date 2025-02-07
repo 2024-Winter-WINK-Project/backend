@@ -12,6 +12,5 @@ public class AdjustmentResponse {
     private String kakaoUrl;
     private String tossUrl;
     private String accountNumber;
-    private Long groupId;
     private List<Long> memberID;
 }
