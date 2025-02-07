@@ -9,6 +9,8 @@ import com.WinkProject.meeting.dto.response.MeetingResponse;
 import com.WinkProject.meeting.service.MeetingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -39,8 +41,9 @@ public class MeetingController {
     )
     @GetMapping("/latest")
     public ResponseEntity<List<MeetingBriefResponse>> getLatestMeetings(
-            @RequestParam(defaultValue = "5") int limit,
-            @RequestParam Long authId) {
+            @RequestParam(defaultValue = "5") int limit) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         return ResponseEntity.ok(meetingService.getLatestMeetings(limit, authId));
     }
 
@@ -55,7 +58,9 @@ public class MeetingController {
         required = true
     )
     @GetMapping
-    public ResponseEntity<List<MeetingBriefResponse>> getMeetings(@RequestParam Long authId) {
+    public ResponseEntity<List<MeetingBriefResponse>> getMeetings() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         return ResponseEntity.ok(meetingService.getMeetingsByAuthId(authId));
     }
 
@@ -113,8 +118,9 @@ public class MeetingController {
     @PostMapping
     public ResponseEntity<MeetingResponse> createMeeting(
             @RequestBody MeetingCreateRequest request,
-            @RequestParam Long authId,
             @RequestParam String nickname) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         return ResponseEntity.ok(meetingService.createMeeting(request, authId, nickname));
     }
 
@@ -140,8 +146,9 @@ public class MeetingController {
     @PutMapping("/{meetingId}")
     public ResponseEntity<MeetingResponse> updateMeeting(
             @PathVariable Long meetingId,
-            @RequestBody MeetingUpdateRequest request,
-            @RequestParam Long authId) {
+            @RequestBody MeetingUpdateRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         return ResponseEntity.ok(meetingService.updateMeeting(meetingId, request, authId));
     }
 
@@ -162,8 +169,9 @@ public class MeetingController {
     )
     @DeleteMapping("/{meetingId}")
     public ResponseEntity<Void> deleteMeeting(
-            @PathVariable Long meetingId,
-            @RequestParam Long authId) {
+            @PathVariable Long meetingId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         meetingService.deleteMeeting(meetingId, authId);
         return ResponseEntity.ok().build();
     }
@@ -191,8 +199,9 @@ public class MeetingController {
     @PostMapping("/{meetingId}/delegate")
     public ResponseEntity<Void> delegateOwner(
             @PathVariable Long meetingId,
-            @RequestParam Long authId,
             @RequestParam Long newLeaderAuthId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         meetingService.delegateOwner(meetingId, authId, newLeaderAuthId);
         return ResponseEntity.ok().build();
     }
@@ -214,8 +223,9 @@ public class MeetingController {
     )
     @DeleteMapping("/{meetingId}/members")
     public ResponseEntity<Void> leaveMeeting(
-            @PathVariable Long meetingId,
-            @RequestParam Long authId) {
+            @PathVariable Long meetingId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         meetingService.leaveMeeting(meetingId, authId);
         return ResponseEntity.ok().build();
     }
@@ -243,8 +253,9 @@ public class MeetingController {
     @DeleteMapping("/{meetingId}/members/{targetAuthId}")
     public ResponseEntity<Void> kickMember(
             @PathVariable Long meetingId,
-            @PathVariable Long targetAuthId,
-            @RequestParam Long authId) {
+            @PathVariable Long targetAuthId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         meetingService.kickMember(meetingId, targetAuthId, authId);
         return ResponseEntity.ok().build();
     }
@@ -267,8 +278,9 @@ public class MeetingController {
     )
     @PostMapping("/{meetingId}/invitations")
     public ResponseEntity<InvitationResponse> createInvitation(
-            @PathVariable Long meetingId,
-            @RequestParam Long authId) {
+            @PathVariable Long meetingId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
         return ResponseEntity.ok(meetingService.createInvitation(meetingId, authId));
     }
 
@@ -290,8 +302,9 @@ public class MeetingController {
     @GetMapping("/{meetingId}/invitations")
     public ResponseEntity<String> getInvitationLink(
             @PathVariable Long meetingId,
-            @RequestParam Long authId,
             HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
 
         String baseUrl = request.getRequestURL().toString().replace(request.getRequestURI(), "");
         String invitationCode = meetingService.getInvitationCode(meetingId, authId);
@@ -323,8 +336,10 @@ public class MeetingController {
     @PostMapping("/invitations/{invitationCode}/request")
     public ResponseEntity<Void> requestJoinMeeting(
             @PathVariable String invitationCode,
-            @RequestParam String nickname,
-            @RequestParam Long authId) {
+            @RequestParam String nickname) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authId = (Long)authentication.getPrincipal();
+
         meetingService.requestJoinMeeting(invitationCode, nickname, authId);
         return ResponseEntity.ok().build();
     }
