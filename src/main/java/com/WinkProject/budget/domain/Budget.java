@@ -24,8 +24,8 @@ public class Budget {
     private Meeting meeting;
 
     private Long totalAmount;
-
-    @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL)
+    
+    @OneToMany(mappedBy = "budget", cascade = CascadeType.ALL,orphanRemoval = true)
     private List<BudgetDetail> details = new ArrayList<>();
 
     private String kakaoRemitLink;

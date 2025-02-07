@@ -8,6 +8,7 @@ import com.WinkProject.budget.dto.request.Kakao;
 import com.WinkProject.budget.dto.request.Toss;
 import com.WinkProject.budget.dto.response.AdjustmentResponse;
 import com.WinkProject.budget.dto.response.BudgetResponse;
+import com.WinkProject.budget.repository.BudgetDetailRepository;
 import com.WinkProject.budget.repository.BudgetRepository;
 import com.WinkProject.meeting.domain.Meeting;
 import com.WinkProject.meeting.repository.MeetingRepository;
@@ -51,6 +52,7 @@ public class BudgetService {
         newDetail.setAmount(history.getAmount());
         newDetail.setCategory(history.getCategory());
         newDetail.setDescription(history.getDescription());
+        newDetail.setBudget(budget);
 
         //잔고 업데이트
         Long balance = budget.getTotalAmount()+history.getAmount();
@@ -67,6 +69,7 @@ public class BudgetService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
         budget.setTotalAmount(budget.getTotalAmount() - budgetDetail.getAmount());
 
+
         budgetDetail.setCategory(history.getCategory());
         budgetDetail.setAmount(history.getAmount());
         budgetDetail.setDescription(history.getDescription());
@@ -82,6 +85,9 @@ public class BudgetService {
                 .filter(detail -> detail.getId().equals(transactionId))
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
+
+        budget.getDetails().remove(detailToRemove);
+
 
         budget.setTotalAmount(budget.getTotalAmount() - detailToRemove.getAmount());
         budget.getDetails().remove(detailToRemove);
