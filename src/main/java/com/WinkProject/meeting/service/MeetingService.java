@@ -67,23 +67,20 @@ public class MeetingService {
         Member owner = Member.createMember(meeting, auth, nickname);
         meeting.getMembers().add(owner);
 
-        // 4. Meeting 저장
-        Meeting savedMeeting = meetingRepository.save(meeting);
-
-        // 5. Settlement 정보가 있는 경우 Settlement 엔티티 생성 및 연결
+        // 4. Settlement 정보가 있는 경우 Settlement 엔티티 생성 및 연결
         if (request.getSettlement() != null) {
-            createSettlement(request, savedMeeting);
+            Settlement settlement = new Settlement(meeting);
+            settlement.setKakaoPayString(request.getSettlement().getKakaoPayString());
+            settlement.setTossPayString(request.getSettlement().getTossPayString());
+            settlement.setAccountNumber(request.getSettlement().getAccountNumber());
+            meeting.setSettlement(settlement);
         }
+
+        // 5. Meeting 저장 (cascade로 인해 Settlement도 함께 저장됨)
+        Meeting savedMeeting = meetingRepository.save(meeting);
 
         // 6. 응답 DTO 반환
         return MeetingResponse.from(savedMeeting);
-    }
-
-    @Transactional
-    private void createSettlement(MeetingCreateRequest request, Meeting savedMeeting) {
-        Settlement settlement = Settlement.from(request.getSettlement(), savedMeeting);
-        savedMeeting.setSettlement(settlement);
-        settlementRepository.save(settlement);
     }
 
     @Transactional
@@ -217,21 +214,32 @@ public class MeetingService {
         }
 
         // 3. 기존 초대 코드 확인
-        Optional<Invitation> existingInvitation = invitationRepository.findByMeetingIdAndInviteCode(meetingId, null);
+        Optional<Invitation> existingInvitation = invitationRepository.findByMeetingId(meetingId);
         if (existingInvitation.isPresent() && existingInvitation.get().getExpiresAt().isAfter(LocalDateTime.now())) {
             return InvitationResponse.from(existingInvitation.get());
         }
 
-        // 4. 새로운 초대 코드 생성
-        String inviteCode;
+        // 4. 새로운 초대 코드 생성 (6자리 영숫자)
+        String inviteCode = null;
         int retryCount = 0;
-        do {
-            inviteCode = UUID.randomUUID().toString();
-            retryCount++;
-            if (retryCount > 5) {
-                throw new RuntimeException("초대 코드 생성에 실패했습니다.");
+        while (retryCount < 5) {
+            StringBuilder code = new StringBuilder();
+            String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            for (int i = 0; i < 6; i++) {
+                code.append(characters.charAt((int) (Math.random() * characters.length())));
             }
-        } while (invitationRepository.existsByInviteCode(inviteCode));
+            String newCode = code.toString();
+            
+            if (!invitationRepository.existsByInviteCode(newCode)) {
+                inviteCode = newCode;
+                break;
+            }
+            retryCount++;
+        }
+        
+        if (inviteCode == null) {
+            throw new RuntimeException("초대 코드 생성에 실패했습니다. (5번 시도 후 실패)");
+        }
 
         // 5. 초대 코드 저장
         Invitation invitation = new Invitation();
