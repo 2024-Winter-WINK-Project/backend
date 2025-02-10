@@ -29,6 +29,8 @@ public class AuthService {
     private String clientId;
     @Value("${spring.security.oauth2.client.registration.kakao.redirect_uri}")
     private String redirectUri;
+    @Value("${spring.security.oauth2.client.registration.kakao.client-secret}")
+    private String clientSecret;
 
     private final AuthRepository authRepository;
 
@@ -44,6 +46,7 @@ public class AuthService {
                         .queryParam("client_id", clientId)
                         .queryParam("redirect_uri",redirectUri)
                         .queryParam("code", code)
+                        .queryParam("client_secret", clientSecret)
                         .build(true))
                 .header(HttpHeaders.CONTENT_TYPE, HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString())
                 .retrieve()
@@ -80,11 +83,11 @@ public class AuthService {
                 .block();
     }
 
-    public UserInfoResponse saveAuth(Long userId, String nickName, String profileUrl){
-        Auth existAuth = authRepository.findById(userId).orElse(null);
+    public UserInfoResponse saveAuth(Long socialId, String nickName, String profileUrl){
+        Auth existAuth = authRepository.findBySocialId(String.valueOf(socialId)).orElse(null);
         if(existAuth == null){
             Auth auth = Auth.builder()
-                    .socialId(String.valueOf(userId))
+                    .socialId(String.valueOf(socialId))
                     .socialType("KAKAO")
                     .nickname(nickName)
                     .profileImage(profileUrl)
@@ -92,7 +95,7 @@ public class AuthService {
             authRepository.save(auth);
             return UserInfoResponse.builder()
                     .loginState("REGISTER")
-                    .memberId(userId)
+                    .memberId(socialId)
                     .nickName(nickName)
                     .profileUrl(profileUrl)
                     .build();
@@ -100,7 +103,7 @@ public class AuthService {
         else{
             return UserInfoResponse.builder()
                     .loginState("EXIST")
-                    .memberId(userId)
+                    .memberId(socialId)
                     .nickName(nickName)
                     .profileUrl(profileUrl)
                     .build();
