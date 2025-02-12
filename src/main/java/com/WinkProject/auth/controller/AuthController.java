@@ -47,11 +47,12 @@ public class AuthController {
         Long userID = kakaoUserInfoResponse.getId();
         String profileUrl = kakaoUserInfoResponse.getKakaoAccount().getProfile().getProfileImageUrl();
         String nickName = kakaoUserInfoResponse.getKakaoAccount().getProfile().getNickName();
+
         //유저 정보 응답 생성
         UserInfoResponse userInfoResponse = authService.saveAuth(userID,nickName,profileUrl);
 
         //쿠키 생성,jwt 전달
-        String token = jwtTokenProvider.createToken(kakaoUserInfoResponse.getId());
+        String token = jwtTokenProvider.createToken(userInfoResponse.getMemberId());
         Cookie cookie = new Cookie("jwt",token);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);

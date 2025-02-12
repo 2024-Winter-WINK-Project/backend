@@ -92,10 +92,10 @@ public class AuthService {
                     .nickname(nickName)
                     .profileImage(profileUrl)
                     .build();
-            authRepository.save(auth);
+            Auth savedAuth = authRepository.save(auth);
             return UserInfoResponse.builder()
                     .loginState("REGISTER")
-                    .memberId(socialId)
+                    .memberId(savedAuth.getId())
                     .nickName(nickName)
                     .profileUrl(profileUrl)
                     .build();
@@ -103,7 +103,7 @@ public class AuthService {
         else{
             return UserInfoResponse.builder()
                     .loginState("EXIST")
-                    .memberId(socialId)
+                    .memberId(existAuth.getId())
                     .nickName(nickName)
                     .profileUrl(profileUrl)
                     .build();
@@ -112,7 +112,7 @@ public class AuthService {
 
     public boolean deleteAuth(Long userId){
         Optional<Auth> existAuth = authRepository.findById(userId);
-        if (existAuth.isPresent() && existAuth.get().getMembers().isEmpty()){ //TODO 회원 탈퇴 거절 케이스 나누기
+        if (existAuth.isPresent() && existAuth.get().getMembers().isEmpty()){
             authRepository.deleteById(userId);
             return true;
         }
