@@ -271,11 +271,7 @@ public class MeetingController {
         description = "초대 코드를 생성할 모임 ID",
         required = true
     )
-    @Parameter(
-        name = "authId",
-        description = "Auth ID (인증 기능 연동 후 제거 예정)", 
-        required = true
-    )
+
     @PostMapping("/{meetingId}/invitations")
     public ResponseEntity<InvitationResponse> createInvitation(
             @PathVariable Long meetingId) {
