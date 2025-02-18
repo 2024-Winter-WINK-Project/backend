@@ -322,7 +322,7 @@ public class MeetingService {
     }
 
     @Transactional
-    public void delegateOwner(Long meetingId, Long currentAuthId, Long newAuthId) {
+    public void delegateOwner(Long meetingId, Long currentAuthId, Long newLeaderMemberId) {
         // 1. 모임 조회
         Meeting meeting = meetingRepository.findById(meetingId)
             .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
@@ -334,7 +334,7 @@ public class MeetingService {
 
         // 3. 새로운 모임장이 될 멤버가 모임의 멤버인지 확인
         Member newOwner = meeting.getMembers().stream()
-            .filter(m -> m.getAuth().getId().equals(newAuthId))
+            .filter(m -> m.getId().equals(newLeaderMemberId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("위임할 멤버가 모임에 속해있지 않습니다."));
 
@@ -344,7 +344,7 @@ public class MeetingService {
         }
 
         // 5. 모임장 권한 위임
-        meeting.setOwnerId(newAuthId);
+        meeting.setOwnerId(newOwner.getAuth().getId());
         meetingRepository.save(meeting);
     }
 

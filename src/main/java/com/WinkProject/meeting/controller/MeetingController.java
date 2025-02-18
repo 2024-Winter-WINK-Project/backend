@@ -192,17 +192,17 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "newLeaderAuthId",
-        description = "새로운 모임장이 될 멤버의 Auth ID",
+        name = "newLeaderMemberId",
+        description = "새로운 모임장이 될 멤버의 ID",
         required = true
     )
     @PostMapping("/{meetingId}/delegate")
     public ResponseEntity<Void> delegateOwner(
             @PathVariable Long meetingId,
-            @RequestParam Long newLeaderAuthId) {
+            @RequestParam Long newLeaderMemeberId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long authId = (Long)authentication.getPrincipal();
-        meetingService.delegateOwner(meetingId, authId, newLeaderAuthId);
+        meetingService.delegateOwner(meetingId, authId, newLeaderMemeberId);
         return ResponseEntity.ok().build();
     }
 
