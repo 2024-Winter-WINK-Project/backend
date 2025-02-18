@@ -1,11 +1,14 @@
 package com.WinkProject.meeting.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.WinkProject.budget.domain.Budget;
+import com.WinkProject.budget.domain.BudgetDetail;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,11 +72,13 @@ public class MeetingService {
 
         // 4. Settlement 정보가 있는 경우 Settlement 엔티티 생성 및 연결
         if (request.getSettlement() != null) {
-            Settlement settlement = new Settlement(meeting);
-            settlement.setKakaoPayString(request.getSettlement().getKakaoPayString());
-            settlement.setTossPayString(request.getSettlement().getTossPayString());
-            settlement.setAccountNumber(request.getSettlement().getAccountNumber());
-            meeting.setSettlement(settlement);
+            Budget budget = new Budget(meeting);
+            budget.setTotalAmount(0L);
+            budget.setKakaoRemitLink(request.getSettlement().getKakaoPayString());
+            budget.setTossRemitLink(request.getSettlement().getTossPayString());
+            budget.setAccountNumber(request.getSettlement().getAccountNumber());
+            budget.setDetails(new ArrayList<>());
+            meeting.setBudget(budget);
         }
 
         // 5. Meeting 저장 (cascade로 인해 Settlement도 함께 저장됨)

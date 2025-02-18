@@ -33,25 +33,18 @@ public class BudgetController {
     @Operation(summary = "모임 가계부 조회",description = "가계부의 상세 내용을 볼 때 사용하는 api")
     public ResponseEntity<BudgetResponse> showBudget(@PathVariable("groupId") Long groupID){
         Budget budget = budgetRepository.findByMeetingId(groupID).orElse(null);
-
-        if (budget == null){
-            BudgetResponse budgetResponse = budgetService.initBudget(groupID);
-            return ResponseEntity.ok(budgetResponse);
-        }
-        else{
-            BudgetResponse budgetResponse = new BudgetResponse();
-            budgetResponse.setTotalAmount(budget.getTotalAmount());
-            budgetResponse.setDetails(budget.getDetails() != null
-                    ? budget.getDetails().stream().map((detail)-> new BudgetDetailResponse(
+        BudgetResponse budgetResponse = new BudgetResponse();
+        budgetResponse.setTotalAmount(budget.getTotalAmount());
+        budgetResponse.setDetails(budget.getDetails() != null
+                        ? budget.getDetails().stream().map((detail)-> new BudgetDetailResponse(
                         detail.getCategory(),
-                            detail.getAmount() >= 0,
+                        detail.getAmount() >= 0,
                         Math.abs(detail.getAmount()),
                         detail.getDescription()
-            )).collect(Collectors.toCollection(ArrayList::new))
-                    : new ArrayList<>()
-                    );
-            return ResponseEntity.ok(budgetResponse);
-        }
+                )).collect(Collectors.toCollection(ArrayList::new))
+                        : new ArrayList<>()
+        );
+        return ResponseEntity.ok(budgetResponse);
     }
 
     @PostMapping("/{groupId}/ledger/transactions")

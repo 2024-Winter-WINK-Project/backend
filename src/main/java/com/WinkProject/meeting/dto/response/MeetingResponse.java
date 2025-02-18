@@ -100,11 +100,11 @@ public class MeetingResponse {
                 .toList();
         response.setMembers(memberResponses);
 
-        if (meeting.getSettlement() != null) {
+        if (meeting.getBudget() != null) {
             SettlementResponse settlementResponse = new SettlementResponse();
-            settlementResponse.setKakaoPayString(meeting.getSettlement().getKakaoPayString());
-            settlementResponse.setTossPayString(meeting.getSettlement().getTossPayString());
-            settlementResponse.setAccountNumber(meeting.getSettlement().getAccountNumber());
+            settlementResponse.setKakaoPayString(meeting.getBudget().getKakaoRemitLink());
+            settlementResponse.setTossPayString(meeting.getBudget().getTossRemitLink());
+            settlementResponse.setAccountNumber(meeting.getBudget().getAccountNumber());
             response.setSettlement(settlementResponse);
         }
 

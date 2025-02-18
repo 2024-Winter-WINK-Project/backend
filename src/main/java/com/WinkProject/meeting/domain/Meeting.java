@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.WinkProject.budget.domain.Budget;
 import com.WinkProject.invitation.domain.Invitation;
 import com.WinkProject.member.domain.Member;
 
@@ -55,15 +56,15 @@ public class Meeting {
     private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Settlement settlement;
+    private Budget budget;
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
 
-    public void setSettlement(Settlement settlement) {
-        this.settlement = settlement;
+    public void setBudget(Budget budget) {
+        this.budget = budget;
     }
 
     // 모임장 관련 편의 메서드
