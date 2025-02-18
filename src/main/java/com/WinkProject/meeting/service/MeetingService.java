@@ -1,43 +1,38 @@
 package com.WinkProject.meeting.service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
+import com.WinkProject.auth.repository.AuthRepository;
+import com.WinkProject.auth.schema.Auth;
 import com.WinkProject.budget.domain.Budget;
-import com.WinkProject.budget.domain.BudgetDetail;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.WinkProject.budget.service.BudgetService;
+import com.WinkProject.invitation.domain.Invitation;
 import com.WinkProject.invitation.dto.response.InvitationResponse;
+import com.WinkProject.invitation.repository.InvitationRepository;
 import com.WinkProject.meeting.domain.Meeting;
 import com.WinkProject.meeting.domain.Place;
-import com.WinkProject.meeting.domain.Settlement;
 import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.dto.request.MeetingUpdateRequest;
 import com.WinkProject.meeting.dto.response.MeetingBriefResponse;
 import com.WinkProject.meeting.dto.response.MeetingResponse;
 import com.WinkProject.meeting.dto.response.MemberProfileResponse;
 import com.WinkProject.meeting.repository.MeetingRepository;
-import com.WinkProject.meeting.repository.SettlementRepository;
-import com.WinkProject.auth.schema.Auth;
 import com.WinkProject.member.domain.Member;
-import com.WinkProject.auth.repository.AuthRepository;
-import com.WinkProject.invitation.domain.Invitation;
-import com.WinkProject.invitation.repository.InvitationRepository;
 import com.WinkProject.member.repository.MemberRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class MeetingService {
     private final MeetingRepository meetingRepository;
-    private final SettlementRepository settlementRepository;
+    private final BudgetService budgetService;
     private final AuthRepository authRepository;
     private final InvitationRepository invitationRepository;
     private final MemberRepository memberRepository;
@@ -72,12 +67,7 @@ public class MeetingService {
 
         // 4. Settlement 정보가 있는 경우 Settlement 엔티티 생성 및 연결
         if (request.getSettlement() != null) {
-            Budget budget = new Budget(meeting);
-            budget.setTotalAmount(0L);
-            budget.setKakaoRemitLink(request.getSettlement().getKakaoPayString());
-            budget.setTossRemitLink(request.getSettlement().getTossPayString());
-            budget.setAccountNumber(request.getSettlement().getAccountNumber());
-            budget.setDetails(new ArrayList<>());
+            Budget budget = budgetService.initBudget(meeting.getId(),request);
             meeting.setBudget(budget);
         }
 

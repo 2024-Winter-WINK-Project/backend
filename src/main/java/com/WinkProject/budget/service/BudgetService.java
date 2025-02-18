@@ -11,6 +11,7 @@ import com.WinkProject.budget.dto.response.BudgetResponse;
 import com.WinkProject.budget.repository.BudgetDetailRepository;
 import com.WinkProject.budget.repository.BudgetRepository;
 import com.WinkProject.meeting.domain.Meeting;
+import com.WinkProject.meeting.dto.request.MeetingCreateRequest;
 import com.WinkProject.meeting.repository.MeetingRepository;
 import com.WinkProject.member.domain.Member;
 import lombok.RequiredArgsConstructor;
@@ -27,22 +28,18 @@ public class BudgetService {
     private final MeetingRepository meetingRepository;
     private final BudgetRepository budgetRepository;
 
-    public BudgetResponse initBudget(Long groupId){
+    public Budget initBudget(Long groupId, MeetingCreateRequest request){
         Meeting meeting = meetingRepository.findById(groupId)
                 .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Meeting not found"));
         Budget budget = new Budget();
         budget.setMeeting(meeting);
         budget.setTotalAmount(0L);
-        budget.setKakaoRemitLink(null);
-        budget.setTossRemitLink(null);
-        budget.setAccountNumber(null);
-        budget.setDetails(new ArrayList<BudgetDetail>());
-        budgetRepository.save(budget);
+        budget.setKakaoRemitLink(request.getSettlement().getKakaoPayString());
+        budget.setTossRemitLink(request.getSettlement().getTossPayString());
+        budget.setAccountNumber(request.getSettlement().getAccountNumber());
+        budget.setDetails(new ArrayList<>());
 
-        BudgetResponse budgetResponse = new BudgetResponse();
-        budgetResponse.setTotalAmount(0L);
-        budgetResponse.setDetails(new ArrayList<>());
-        return budgetResponse;
+        return budget;
 
     }
 

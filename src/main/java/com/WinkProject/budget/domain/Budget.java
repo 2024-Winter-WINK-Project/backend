@@ -32,7 +32,4 @@ public class Budget {
     private String tossRemitLink;
     private String accountNumber;
 
-    public Budget(Meeting meeting){
-        this.meeting = meeting;
-    }
 }

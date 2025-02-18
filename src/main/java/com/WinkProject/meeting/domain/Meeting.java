@@ -63,9 +63,6 @@ public class Meeting {
         this.createdAt = LocalDateTime.now();
     }
 
-    public void setBudget(Budget budget) {
-        this.budget = budget;
-    }
 
     // 모임장 관련 편의 메서드
     public boolean isOwner(Long userId) {
