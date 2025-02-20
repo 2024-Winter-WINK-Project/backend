@@ -192,17 +192,17 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "newLeaderAuthId",
-        description = "새로운 모임장이 될 멤버의 Auth ID",
+        name = "newLeaderMemberId",
+        description = "새로운 모임장이 될 멤버의 ID",
         required = true
     )
     @PostMapping("/{meetingId}/delegate")
     public ResponseEntity<Void> delegateOwner(
             @PathVariable Long meetingId,
-            @RequestParam Long newLeaderAuthId) {
+            @RequestParam Long newLeaderMemeberId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long authId = (Long)authentication.getPrincipal();
-        meetingService.delegateOwner(meetingId, authId, newLeaderAuthId);
+        meetingService.delegateOwner(meetingId, authId, newLeaderMemeberId);
         return ResponseEntity.ok().build();
     }
 
@@ -241,8 +241,8 @@ public class MeetingController {
         required = true
     )
     @Parameter(
-        name = "targetAuthId",
-        description = "퇴장시킬 사용자의 Auth ID",
+        name = "targetMemberId",
+        description = "퇴장시킬 사용자의 ID",
         required = true
     )
     @Parameter(
@@ -250,13 +250,13 @@ public class MeetingController {
         description = "요청하는 사용자의 Auth ID (인증 기능 연동 후 제거 예정)",
         required = true
     )
-    @DeleteMapping("/{meetingId}/members/{targetAuthId}")
+    @DeleteMapping("/{meetingId}/members/{targetMemberId}")
     public ResponseEntity<Void> kickMember(
             @PathVariable Long meetingId,
-            @PathVariable Long targetAuthId) {
+            @PathVariable Long targetMemberId) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long authId = (Long)authentication.getPrincipal();
-        meetingService.kickMember(meetingId, targetAuthId, authId);
+        meetingService.kickMember(meetingId, targetMemberId, authId);
         return ResponseEntity.ok().build();
     }
 

@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -166,7 +165,7 @@ public class MeetingService {
     }
     
     @Transactional
-    public void kickMember(Long meetingId, Long targetAuthId, Long authId) {
+    public void kickMember(Long meetingId, Long targetMemberId, Long authId) {
         // 1. 모임 조회
         Meeting meeting = meetingRepository.findById(meetingId)
             .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
@@ -178,7 +177,7 @@ public class MeetingService {
 
         // 3. 강제 퇴장할 멤버가 모임의 멤버인지 확인
         Member targetMember = meeting.getMembers().stream()
-            .filter(m -> m.getAuth().getId().equals(targetAuthId))
+            .filter(m -> m.getId().equals(targetMemberId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("퇴장시킬 멤버가 모임에 속해있지 않습니다."));
 
@@ -188,7 +187,7 @@ public class MeetingService {
         }
 
         // 5. 모임장을 강제 퇴장시키려는 경우 방지
-        if (meeting.isOwner(targetAuthId)) {
+        if (targetMember.getAuth().getId().equals(authId)) {
             throw new IllegalArgumentException("모임장은 강제 퇴장시킬 수 없습니다.");
         }
 
@@ -322,7 +321,7 @@ public class MeetingService {
     }
 
     @Transactional
-    public void delegateOwner(Long meetingId, Long currentAuthId, Long newAuthId) {
+    public void delegateOwner(Long meetingId, Long currentAuthId, Long newLeaderMemberId) {
         // 1. 모임 조회
         Meeting meeting = meetingRepository.findById(meetingId)
             .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없습니다."));
@@ -334,7 +333,7 @@ public class MeetingService {
 
         // 3. 새로운 모임장이 될 멤버가 모임의 멤버인지 확인
         Member newOwner = meeting.getMembers().stream()
-            .filter(m -> m.getAuth().getId().equals(newAuthId))
+            .filter(m -> m.getId().equals(newLeaderMemberId))
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("위임할 멤버가 모임에 속해있지 않습니다."));
 
@@ -344,7 +343,7 @@ public class MeetingService {
         }
 
         // 5. 모임장 권한 위임
-        meeting.setOwnerId(newAuthId);
+        meeting.setOwnerId(newOwner.getAuth().getId());
         meetingRepository.save(meeting);
     }
 
