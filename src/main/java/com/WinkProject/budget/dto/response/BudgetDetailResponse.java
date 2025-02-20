@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class BudgetDetailResponse {
+    private Long id;
     private String category;
     private boolean plus;
     private Long amount;

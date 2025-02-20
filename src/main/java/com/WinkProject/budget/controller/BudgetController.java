@@ -37,6 +37,7 @@ public class BudgetController {
         budgetResponse.setTotalAmount(budget.getTotalAmount());
         budgetResponse.setDetails(budget.getDetails() != null
                         ? budget.getDetails().stream().map((detail)-> new BudgetDetailResponse(
+                        detail.getId(),
                         detail.getCategory(),
                         detail.getAmount() >= 0,
                         Math.abs(detail.getAmount()),
