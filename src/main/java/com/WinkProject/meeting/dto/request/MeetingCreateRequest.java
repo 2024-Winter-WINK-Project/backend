@@ -33,6 +33,7 @@ public class MeetingCreateRequest {
         private String kakaoPayString;
         private String tossPayString;
         private String accountNumber;
+        private String bank;
     }
 
     public Meeting toEntity() {

@@ -2,10 +2,7 @@ package com.WinkProject.budget.service;
 
 import com.WinkProject.budget.domain.Budget;
 import com.WinkProject.budget.domain.BudgetDetail;
-import com.WinkProject.budget.dto.request.BankAccount;
-import com.WinkProject.budget.dto.request.HistoryRequest;
-import com.WinkProject.budget.dto.request.Kakao;
-import com.WinkProject.budget.dto.request.Toss;
+import com.WinkProject.budget.dto.request.*;
 import com.WinkProject.budget.dto.response.AdjustmentResponse;
 import com.WinkProject.budget.dto.response.BudgetResponse;
 import com.WinkProject.budget.repository.BudgetDetailRepository;
@@ -37,6 +34,7 @@ public class BudgetService {
         budget.setKakaoRemitLink(request.getSettlement().getKakaoPayString());
         budget.setTossRemitLink(request.getSettlement().getTossPayString());
         budget.setAccountNumber(request.getSettlement().getAccountNumber());
+        budget.setBank(request.getSettlement().getBank());
         budget.setDetails(new ArrayList<>());
 
         return budget;
@@ -109,6 +107,12 @@ public class BudgetService {
         budgetRepository.save(budget);
     }
 
+    public void addBankName(Long groupId , BankName bankName){
+        Budget budget = budgetRepository.findByMeetingId(groupId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Budget not found"));
+        budget.setBank(bankName.getBankName());
+        budgetRepository.save(budget);
+    }
+
     public AdjustmentResponse getInfo(Long groupId){
         Meeting meeting = meetingRepository.findById(groupId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Meeting not found"));
         List<Long> member = meeting.getMembers().stream().map(Member::getId).toList();
@@ -119,6 +123,7 @@ public class BudgetService {
                 .accountNumber(budget.getAccountNumber())
                 .tossUrl(budget.getTossRemitLink())
                 .kakaoUrl(budget.getKakaoRemitLink())
+                .bankName(budget.getBank())
                 .memberID(member)
                 .build();
 

@@ -2,10 +2,7 @@ package com.WinkProject.budget.controller;
 
 
 import com.WinkProject.budget.domain.Budget;
-import com.WinkProject.budget.dto.request.BankAccount;
-import com.WinkProject.budget.dto.request.HistoryRequest;
-import com.WinkProject.budget.dto.request.Kakao;
-import com.WinkProject.budget.dto.request.Toss;
+import com.WinkProject.budget.dto.request.*;
 import com.WinkProject.budget.dto.response.AdjustmentResponse;
 import com.WinkProject.budget.dto.response.BalanceResponse;
 import com.WinkProject.budget.dto.response.BudgetDetailResponse;
@@ -90,9 +87,16 @@ public class BudgetController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{groupId}/transfer/bank-account-name")
+    @Operation(summary = "은행명 등록",description = "은행명을 저장하는 api")
+    public ResponseEntity<Void> bankName(@PathVariable("groupId") Long groupId, @RequestBody BankName bankName){
+        budgetService.addBankName(groupId,bankName);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/{groupId}/transfer")
     @Operation(summary = "등록된 송금코드 조회",description = "해당 모임에 등록된 송금코드를 조회하는 api")
-    public ResponseEntity<AdjustmentResponse> adjustment(@PathVariable("groupId")Long groupId){
+    public ResponseEntity<AdjustmentResponse> adjustment(@PathVariable("groupId") Long groupId){
         AdjustmentResponse response = budgetService.getInfo(groupId);
         return ResponseEntity.ok(response);
     }

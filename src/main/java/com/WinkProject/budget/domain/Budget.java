@@ -31,5 +31,6 @@ public class Budget {
     private String kakaoRemitLink;
     private String tossRemitLink;
     private String accountNumber;
+    private String bank;
 
 }
